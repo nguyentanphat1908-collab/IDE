@@ -16,7 +16,9 @@ Tài liệu này nêu thẳng **cái mất và cái được** khi chuyển ki�
 | **Chống nhiễu** | Mạch khử rung tự thiết kế | Opto sẵn trong driver + cáp lưới chắn + đi dây đúng chuẩn |
 | **Phát xung** | Bit-bang bằng firmware | **PTO phần cứng, 100 kHz** |
 | **Nội suy quỹ đạo** | **Bresenham Line + BLU_mapping 16 hướng** | Vận tốc tỉ lệ trên 2 trục PTO độc lập |
-| **Định dạng Acode** | `bit x,y` — **từng pixel** | `line x,y,f` — **polyline** |
+| **Định dạng thiết kế đầu vào** | 3 file **PDF** + xử lý ảnh | **Gerber + Excellon** (vector, đồng bộ theo chuẩn) |
+| **Định dạng chương trình gia công** | Acode tự định nghĩa, `bit x,y` từng pixel | **G-code `.nc` chuẩn** — mô phỏng được bằng phần mềm có sẵn |
+| **Kiểm tra chất lượng** | Thủ công bằng mắt và đồng hồ đo | **AOI tự động**: chụp ghép + YOLO, 8 lớp khuyết tật |
 | **Điện áp hệ thống** | 12 VDC (nguồn 20 A) | **24 VDC** (nguồn 15 A + PM1207 riêng cho PLC) |
 | **Ngôn ngữ / công cụ** | C++ trên PlatformIO (Firmware_ADL) | SCL + LAD trên **TIA Portal** |
 | **Nạp chương trình** | USB / SWD, miễn phí | TIA Portal — **cần license** |
@@ -46,6 +48,9 @@ Chuyển sang PLC là **quay lại đúng chỗ mà đồ án cố tránh** — 
 > **Nếu đây là đồ án nộp trường**, hội đồng nhiều khả năng sẽ hỏi đúng điểm này. Cần chuẩn bị lập
 > luận: chuyển sang PLC là bài toán **công nghiệp hóa một nguyên mẫu**, khác mục tiêu với bài toán
 > **làm chủ công nghệ** của đồ án gốc. Hai mục tiêu đều chính đáng nhưng không thể đạt đồng thời.
+>
+> Lập luận bổ trợ mạnh hơn: **phần kiểm tra quang học tự động (§3.7) là đóng góp học thuật mới thay
+> thế cho phần bị mất** — trọng tâm dịch chuyển sang thị giác máy và học sâu, không phải mất đi.
 
 ### 2.2 Chi phí tăng đáng kể
 
@@ -55,8 +60,9 @@ chính lý do đó.
 
 ### 2.3 Phải sửa cả phần mềm PC, không chỉ PLC
 
-Đổi từ pixel sang polyline nghĩa là **khâu xử lý ảnh phải viết lại**, chứ không phải chỉ thay bộ
-điều khiển. Khối lượng công việc lớn hơn nhiều so với cảm nhận ban đầu.
+Chuyển sang Gerber → `.nc` nghĩa là **khâu sinh đường chạy dao bị thay hoàn toàn**, chứ không phải
+chỉ thay bộ điều khiển. Đổi lại, khâu này trở nên đơn giản và chính xác hơn hẳn — xem
+`gerber-sang-nc.md` §10.
 
 ### 2.4 Không có nội suy cung tròn
 
@@ -115,6 +121,24 @@ Bản PLC dạy: TIA Portal, Technology Object, truyền thông công nghiệp, 
 
 Kỹ năng thứ hai là thứ nhà tuyển dụng trong ngành tự động hóa tìm kiếm trực tiếp.
 
+### 3.7 Đóng góp học thuật mới: kiểm tra quang học tự động
+
+Đây là điểm **bù lại trực tiếp** cho cái mất ở §2.1.
+
+Đồ án gốc dừng ở chỗ *"mạch gia công cho ra có thể sử dụng được"* — chất lượng đánh giá bằng mắt.
+Bản mới bổ sung một bài toán nghiên cứu độc lập và có tính mới:
+
+| Đóng góp | Vì sao có tính mới |
+|---|---|
+| Bộ nhãn 8 lớp khuyết tật **đặc thù công nghệ phay** | Tập dữ liệu công khai (DeepPCB, HRIPCB) đều dành cho công nghệ **ăn mòn**, cơ chế sinh khuyết tật khác hẳn |
+| Kiến trúc lai: tham chiếu Gerber sinh ứng viên + YOLO phân loại | Giải quyết đồng thời độ bỏ sót, báo nhầm và ràng buộc tính toán trên thiết bị biên |
+| Chụp ghép bằng **chính cơ cấu định vị của máy** | Đạt GSD 13 µm không cần quang học đắt tiền; đăng ký ảnh gần như miễn phí nhờ độ chính xác máy 2,5 µm |
+| **Sinh khuyết tật có kiểm soát** để xây tập dữ liệu | Nhãn ground truth có sẵn theo tọa độ, loại bỏ sai lệch chủ quan khi gán nhãn thủ công |
+
+> **Về mặt cân đối cho một đồ án:** phần giải thuật CNC tự viết bị mất đi, nhưng phần thị giác máy
+> tính và học sâu được thêm vào. Trọng tâm học thuật **dịch chuyển** từ hệ thống nhúng sang tự động
+> hóa công nghiệp kết hợp thị giác máy — chứ không biến mất. Chi tiết ở `kiem-tra-quang-hoc.md`.
+
 ---
 
 ## 4. Cái giữ nguyên
@@ -128,7 +152,7 @@ Kỹ năng thứ hai là thứ nhà tuyển dụng trong ngành tự động hó
 | **Kiến trúc 3 tầng** | Unit → Int → Main của Firmware_ADL ánh xạ tự nhiên sang FB/FC của TIA Portal |
 | **Framework_ADL** | Vẫn dùng cho phần mềm PC và giao diện trên Pi |
 | **Luồng 7 tab phần mềm PC** | Không đổi |
-| **Tư tưởng xử lý ảnh** | Canny, tìm tâm lỗ khoan, tô đen lỗ khoan — giữ nguyên, chỉ thay khâu cuối |
+| **Tư tưởng xử lý ảnh** | **Chuyển vai trò**: không còn dùng để sinh đường chạy dao, mà dùng cho kiểm tra quang học sau gia công |
 
 Đáng chú ý: **kiến trúc phần mềm của đồ án gốc tốt đến mức chuyển sang PLC vẫn dùng lại được**.
 Đó là lời khen thực chất cho thiết kế Firmware_ADL — một firmware hướng đối tượng phân tầng rõ ràng
@@ -155,4 +179,5 @@ thì việc đổi nền tảng phần cứng không phá vỡ cấu trúc.
 |---|---|
 | [`thiet-bi-va-chuc-nang.md`](thiet-bi-va-chuc-nang.md) | Danh sách thiết bị và chức năng tổng thể |
 | [`chuc-nang-plc.md`](chuc-nang-plc.md) | Đặc tả PLC: I/O, khối hàm, DB, an toàn, đấu dây |
-| [`xu-ly-anh.md`](xu-ly-anh.md) | Pipeline PDF → Acode polyline |
+| [`gerber-sang-nc.md`](gerber-sang-nc.md) | Sinh đường chạy dao từ file Gerber |
+| [`kiem-tra-quang-hoc.md`](kiem-tra-quang-hoc.md) | Kiểm tra quang học tự động sau gia công |

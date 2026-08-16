@@ -85,7 +85,7 @@ NEMA17 (0,45 N.m) dư rất nhiều biên.
 
 | # | Thiết bị | SL | Thông số | Chức năng |
 |---|---|---|---|---|
-| 10 | **Raspberry Pi 4 (4 GB)** | 1 | 4× Cortex-A72 · 4 GB LPDDR4 · **Gigabit Ethernet** · 2× USB 3.0 · 40 GPIO · 5 V/3 A `[DS]` | **Master**: đọc USB, xử lý ảnh, biên dịch Acode, chạy giao diện |
+| 10 | **Raspberry Pi 4 (4 GB)** | 1 | 4× Cortex-A72 · 4 GB LPDDR4 · **Gigabit Ethernet** · 2× USB 3.0 · 40 GPIO · 5 V/3 A `[DS]` | **Master**: đọc USB, sinh `.nc`, biên dịch, chạy giao diện và module AOI |
 | 11 | **CPU S7-1200 1214C DC/DC/DC** | 1 | 14 DI / 10 DO / 2 AI · **4 bộ phát xung PTO/PWM, 100 kHz** · 1 cổng PROFINET `[DS]` | **Slave**: điều khiển chuyển động, I/O, ATC, an toàn |
 | 12 | **SM 1223 DI8/DQ8 ×24VDC** | 1 | 8 DI / 8 DO transistor `[DS]` | Bù ngõ ra thiếu — nhu cầu 12 DO > 10 DO onboard |
 | 13 | Màn hình cảm ứng **TFT LCD 3.5"** | 1 | 320 × 480 px · 50 Hz · 5 V/120 mA `[ĐA]` | Giao diện vận hành tại máy |
@@ -97,9 +97,10 @@ NEMA17 (0,45 N.m) dư rất nhiều biên.
 
 1. **Gigabit Ethernet onboard.** Pi Zero 2W **không có cổng Ethernet nào** — chỉ WiFi. Link snap7
    tới PLC lẽ ra phải qua adapter USB hoặc WiFi: không tất định, dễ nhiễu trong tủ điện.
-2. **RAM 4 GB thay 512 MB.** Rasterize PDF ở 600 DPI cho ảnh ~13 MP, nhân 3 file cộng các bản
-   trung gian — **không chạy nổi trên 512 MB**. Xem `xu-ly-anh.md` §1.
-3. **4× Cortex-A72 + USB 3.0.** Rút ngắn thời gian xử lý ảnh và đọc USB.
+2. **RAM 4 GB thay 512 MB.** Ảnh kiểm tra quang học sau gia công gồm 20 tile × 11,9 MP ≈ 0,72 GB
+   dữ liệu thô — **không chạy nổi trên 512 MB**. Xem `kiem-tra-quang-hoc.md` §5.2.
+3. **4× Cortex-A72 + USB 3.0.** Cần cho suy luận YOLO trên thiết bị biên không GPU, và rút ngắn
+   thời gian đọc USB.
 
 ### A3.2 Driver và mạch công suất
 
@@ -156,13 +157,30 @@ Số lượng công tắc hành trình là `[ĐX]` — đồ án gốc không n�
 | 30 | **Tản nhiệt + quạt cho Pi 4** | Bắt buộc trong tủ kín cạnh spindle và driver — Pi 4 throttle ở 80 °C `[DS]` |
 | 31 | Quạt thông gió tủ điện | Điều khiển từ PLC |
 
+### A3.6 Cụm kiểm tra quang học (AOI) — mới hoàn toàn
+
+| # | Thiết bị | SL | Thông số | Chức năng |
+|---|---|---|---|---|
+| 32 | **Raspberry Pi Camera Module 3** | 1 | Sony IMX708 · 11,9 MP (4608 × 2592) · lấy nét tự động · giao tiếp CSI `[DS]` | Chụp ảnh bo sau gia công |
+| 33 | **Đèn vòng LED khuếch tán** | 1 | CRI cao, nhiệt độ màu cố định | **Triệt phản xạ gương trên bề mặt đồng** |
+| 34 | Giá gắn camera + đèn | 1 | Gắn trên cụm trục chính, di chuyển cùng | Chụp ghép theo lưới bằng chính chuyển động máy |
+| 35 | Che chắn khoang chụp | 1 | — | Loại nhiễu do ánh sáng phòng thay đổi |
+| 36 | *(Tùy chọn)* Google Coral USB Accelerator | 1 | Edge TPU | Tăng tốc suy luận YOLO nếu cần |
+
+> **Chiếu sáng khuếch tán là bắt buộc, không phải tùy chọn.** Đồng có phản xạ gương mạnh; chiếu sáng
+> trực tiếp tạo điểm chói bão hòa làm hỏng bước phân đoạn đồng/nền. Xem `kiem-tra-quang-hoc.md` §5.3.
+
+> **Camera gắn trên cụm trục chính** để tận dụng cơ cấu định vị 2,5 µm của máy làm phương tiện quét
+> ảnh — đạt độ phân giải 13 µm/px mà không cần ống kính telecentric đắt tiền.
+
 ## A4. Phần mềm
 
 | # | Thành phần | Nền tảng | Chức năng | Trạng thái |
 |---|---|---|---|---|
-| 32 | **App xuất file** (PC) | Python + Tkinter, kiến trúc **Framework_ADL** `[ĐA]` | 3 file PDF → xử lý ảnh → Acode | **Sửa: đầu ra pixel → polyline** |
-| 33 | **App giao diện** (Pi 4) | Python, Framework_ADL `[ĐA]` | UI, đọc USB, biên dịch Acode, bù z, giao tiếp PLC | **Thêm `Service_S7Comm` (python-snap7)** |
-| 34 | **Chương trình PLC** | TIA Portal, SCL + LAD | Chuyển động, I/O, ATC, an toàn | **Mới hoàn toàn — thay Firmware_ADL** |
+| 37 | **App xuất file** (PC) | Python + Tkinter, kiến trúc **Framework_ADL** `[ĐA]` | Gerber + Excellon → file `.nc` | **Viết lại: bỏ xử lý ảnh, dùng pcb2gcode** |
+| 38 | **App giao diện** (Pi 4) | Python, Framework_ADL `[ĐA]` | UI, đọc USB, phân tích `.nc`, bù z, giao tiếp PLC | **Thêm `Service_S7Comm` (python-snap7)** |
+| 39 | **Module AOI** (Pi 4) | Python + OpenCV + YOLO (ONNX/NCNN) | Chụp ghép, phân đoạn, sinh ứng viên, phát hiện khuyết tật | **Mới hoàn toàn** |
+| 40 | **Chương trình PLC** | TIA Portal, SCL + LAD | Chuyển động, I/O, ATC, chụp ảnh, an toàn | **Mới hoàn toàn — thay Firmware_ADL** |
 
 ## A5. Phân bổ I/O
 
@@ -221,7 +239,8 @@ Kể cả nâng lên vi bước 1/32 (16 kHz) vẫn còn dư rất nhiều biên
 | **Mạch chống nhiễu / khử rung tự chế** | DM542/TB6600 đã có opto cách ly; nhiễu xử lý gốc rễ bằng cáp lưới chắn và đi dây đúng chuẩn |
 | **Nguồn xung 12 V – 20 A** | Toàn máy chuyển sang 24 V |
 | **Bo mạch module tự thiết kế** | Thay bằng tủ điện, DIN rail, terminal chuẩn công nghiệp |
-| **Raspberry Pi Zero 2W** | Không có cổng Ethernet; 512 MB không đủ cho xử lý ảnh 600 DPI |
+| **Raspberry Pi Zero 2W** | Không có cổng Ethernet; 512 MB không đủ cho ảnh AOI và suy luận YOLO |
+| **Pipeline PDF + xử lý ảnh** | Thay bằng Gerber → `.nc`: dữ liệu vector, không sai số lượng tử hóa, các layer đồng bộ theo chuẩn |
 
 ---
 
@@ -234,60 +253,64 @@ Người dùng tick chọn quy trình cần chạy ở tab Select mode `[ĐA]`.
 | # | Chức năng | Mô tả |
 |---|---|---|
 | 1 | **Phay đường mạch** | Phay tách đường đồng theo biên dạng đã offset bán kính dao |
-| 2 | **Khoan lỗ** | Khoan theo tọa độ tâm và cỡ mũi khoan nhận diện tự động từ ảnh |
-| 3 | **Phay mặt** | Bóc vùng đồng thừa bằng đường zig-zag |
+| 2 | **Khoan lỗ** | Khoan theo tọa độ và đường kính **khai báo tường minh trong file Excellon** |
+| 3 | **Phay mặt** | Bóc vùng đồng thừa |
 | 4 | **Cắt viền mạch** | Cắt rời bo theo đường viền ngoài |
 | 5 | **Thay dao tự động (ATC)** | 6 ổ dao cố định, spindle đảo chiều để siết/nhả |
+| 6 | **Kiểm tra quang học sau gia công (AOI)** | **Mới** — chụp ghép 20 tile, phát hiện và phân loại 8 lớp khuyết tật, hiển thị bản đồ lỗi. Xem `kiem-tra-quang-hoc.md` |
 
 ## B2. Chức năng hệ thống và hiệu chuẩn
 
 | # | Chức năng | Hiện thực trên bản PLC |
 |---|---|---|
-| 6 | **Set home** | `MC_Home` chế độ active homing, dùng công tắc hành trình làm cam. Thứ tự **Z → X → Y** để dao không va phôi |
-| 7 | **Leveling** | Hạ Z chậm bằng `MC_MoveVelocity`, chạm probe → **ngắt phần cứng** → `MC_Halt` → chốt Z |
-| 8 | **Leveling map** | **Giữ nguyên 66 điểm ma trận 6×11** `[ĐA]`. Ghép mỗi 3 điểm thành 1 mặt phẳng + hàm chọn mặt phẳng phù hợp cho (x,y). **Chạy trên Pi, không phải PLC** |
-| 9 | **Move thủ công** | `MC_MoveJog` từng trục từ màn hình |
-| 10 | **Disable / Enable stepper** | `MC_Power` — ngắt để đẩy bàn máy bằng tay |
-| 11 | **Unit control** | Hiệu chỉnh thông số máy |
-| 12 | **Info** | Hiển thị thông tin máy |
-| 13 | **Hiển thị realtime** | PWM spindle, thời gian giữa 2 bước xung, chế độ vi bước, tọa độ x/y/z |
+| 7 | **Set home** | `MC_Home` chế độ active homing, dùng công tắc hành trình làm cam. Thứ tự **Z → X → Y** để dao không va phôi |
+| 8 | **Leveling** | Hạ Z chậm bằng `MC_MoveVelocity`, chạm probe → **ngắt phần cứng** → `MC_Halt` → chốt Z |
+| 9 | **Leveling map** | **Giữ nguyên 66 điểm ma trận 6×11** `[ĐA]`. Ghép mỗi 3 điểm thành 1 mặt phẳng + hàm chọn mặt phẳng phù hợp cho (x,y). **Chạy trên Pi, không phải PLC** |
+| 10 | **Move thủ công** | `MC_MoveJog` từng trục từ màn hình |
+| 11 | **Disable / Enable stepper** | `MC_Power` — ngắt để đẩy bàn máy bằng tay |
+| 12 | **Unit control** | Hiệu chỉnh thông số máy |
+| 13 | **Info** | Hiển thị thông tin máy |
+| 14 | **Hiển thị realtime** | PWM spindle, thời gian giữa 2 bước xung, chế độ vi bước, tọa độ x/y/z |
 
 ## B3. Bảy tab phần mềm PC — giữ nguyên luồng của đồ án gốc
 
 | # | Tab | Chức năng |
 |---|---|---|
-| 14 | Menu | Hỏi đã dùng máy chưa → Yes vào thẳng, No sang video |
-| 15 | Video Tutorial | Hướng dẫn cho người mới |
-| 16 | Select File | Nhận **3 file PDF**: mạch in hoàn chỉnh, lỗ khoan, đường viền |
-| 17 | Select Area | Tinh chỉnh khung bao; hiển thị chế độ vi bước, hệ số tỉ lệ pixel, kích thước bo |
-| 18 | Waiting Convert | Tiến trình xuất file |
-| 19 | Save File Acode | **Preview** (mô phỏng) hoặc **Save file** |
-| 20 | End | Home hoặc Exit |
+| 15 | Menu | Hỏi đã dùng máy chưa → Yes vào thẳng, No sang video |
+| 16 | Video Tutorial | Hướng dẫn cho người mới |
+| 17 | Select File | Nhận **file Gerber** (lớp đồng, đường viền) + **file Excellon** (lỗ khoan) |
+| 18 | Select Area | Chọn vị trí gia công trên phôi; hiển thị chế độ vi bước, đường kính dao, kích thước bo |
+| 19 | Waiting Convert | Tiến trình xuất file |
+| 20 | Save File NC | **Preview** (mô phỏng) hoặc **Save file** — file `.nc` mở được bằng phần mềm mô phỏng CNC bất kỳ |
+| 21 | End | Home hoặc Exit |
 
 ## B4. Giải thuật lõi
 
 | # | Giải thuật | Trạng thái |
 |---|---|---|
-| 21 | **Xử lý ảnh PDF → Acode** | Giữ tư tưởng gốc, **thay khâu cuối**. 12 bước chi tiết ở `xu-ly-anh.md` |
-| 22 | **Nội suy đường thẳng 2 trục** | **Mới** — vận tốc tỉ lệ `v_x = v·\|dx\|/L`, `v_y = v·\|dy\|/L` để 2 trục về đích cùng lúc |
-| 23 | **Bắt tay truyền dữ liệu** | **Giữ nguyên triết lý** "truyền không nhanh, nhưng phải đủ" `[ĐA]` — cặp đếm `int_sys`/`int_cnc` chuyển thành 2 word trong DB; quá hạn thì gửi lại lệnh cũ |
-| 24 | ~~Bresenham Line~~ | **Bị loại bỏ** — PTO không nội suy được |
-| 25 | ~~BLU_mapping 16 hướng~~ | **Bị loại bỏ** — cùng lý do |
+| 22 | **Gerber + Excellon → `.nc`** | **Thay hoàn toàn** pipeline xử lý ảnh của đồ án gốc. Chi tiết ở `gerber-sang-nc.md` |
+| 23 | **Nội suy đường thẳng 2 trục** | **Mới** — vận tốc tỉ lệ `v_x = v·\|dx\|/L`, `v_y = v·\|dy\|/L` để 2 trục về đích cùng lúc |
+| 24 | **Bắt tay truyền dữ liệu** | **Giữ nguyên triết lý** "truyền không nhanh, nhưng phải đủ" `[ĐA]` — cặp đếm `int_sys`/`int_cnc` chuyển thành 2 word trong DB; quá hạn thì gửi lại lệnh cũ |
+| 25 | ~~Bresenham Line~~ | **Bị loại bỏ** — PTO không nội suy được |
+| 26 | ~~BLU_mapping 16 hướng~~ | **Bị loại bỏ** — cùng lý do |
+| 27 | **Kiến trúc AOI lai** | **Mới** — sinh vùng ứng viên bằng tham chiếu Gerber + phân loại bằng YOLO. Chi tiết ở `kiem-tra-quang-hoc.md` |
 
-**Tập lệnh Acode mới:**
+**Định dạng trung gian: G-code chuẩn thay cho Acode tự định nghĩa**
 
 ```
-rapid     x,y          ; di chuyển nhanh, dao nâng
-zdown / zup            ; hạ / nâng dao
-line      x,y,f        ; THAY cho "bit x,y" của bản gốc
-movedrill x,y,tool
-movecut   x,y
-change    tool
+G00 X.. Y.. Z..    ; di chuyển nhanh, dao nâng
+G01 X.. Y.. F..    ; cắt theo đường thẳng
+G02 / G03          ; cung tròn — PHẢI tuyến tính hóa, PLC không nội suy được
+M03 / M05          ; bật / tắt trục chính
+M06 T..            ; thay dao
 ```
 
-> **Vì sao `bit` phải chết.** Hai lý do độc lập nhau, mỗi lý do đều đủ để loại: ① PTO của S7-1200
-> là các trục độc lập, không nội suy được; ② độ trễ Ethernet 5–20 ms/lệnh khiến gửi từng pixel là
-> bất khả thi. Xem `xu-ly-anh.md` §7 để thấy mức rút gọn: **5000 lệnh `bit` → 200–400 lệnh `line`**.
+> **Vì sao bỏ Acode.** File `.nc` là G-code chuẩn nên **mở được bằng bất kỳ phần mềm mô phỏng CNC
+> nào** để kiểm tra đường chạy dao trước khi gia công — điều mà định dạng tự định nghĩa không làm
+> được. Đổi lại, mất đi tính "tự thiết kế định dạng" vốn là một đóng góp của đồ án gốc.
+
+> **Ràng buộc cung tròn.** `G02`/`G03` phải được tuyến tính hóa vì các trục PTO của S7-1200 chạy
+> độc lập, chỉ dựng được đường thẳng. Xem `gerber-sang-nc.md` §6.
 
 ## B5. Chức năng phía PLC
 
@@ -333,5 +356,6 @@ Bản PDF đồ án có vài chỗ không nhất quán. Ghi lại để người
 | File | Nội dung |
 |---|---|
 | [`chuc-nang-plc.md`](chuc-nang-plc.md) | Đặc tả PLC: I/O, khối hàm, DB, an toàn, đấu dây |
-| [`xu-ly-anh.md`](xu-ly-anh.md) | Pipeline 12 bước PDF → Acode polyline |
+| [`gerber-sang-nc.md`](gerber-sang-nc.md) | Sinh đường chạy dao từ file Gerber |
+| [`kiem-tra-quang-hoc.md`](kiem-tra-quang-hoc.md) | Kiểm tra quang học tự động sau gia công |
 | [`so-sanh-stm32-vs-s7.md`](so-sanh-stm32-vs-s7.md) | Đối chiếu bản gốc ↔ bản PLC |

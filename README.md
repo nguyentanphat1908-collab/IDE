@@ -1,13 +1,25 @@
 # Máy gia công mạch PCB tự động — Tài liệu thiết kế (bản PLC S7-1200)
 
 Repo lưu tài liệu thiết kế máy phay/khoan mạch PCB tự động, **chuyển đổi từ kiến trúc STM32 sang
-PLC Siemens S7-1200**.
+PLC Siemens S7-1200**, bổ sung **kiểm tra quang học tự động sau gia công**.
 
-**Kiến trúc:** Raspberry Pi 4 làm Master — đọc USB, rasterize PDF, xử lý ảnh, biên dịch Acode và
-chạy giao diện. S7-1200 làm Slave — điều khiển 3 trục bằng PTO, spindle bằng PWM, thay dao tự động
-và an toàn máy. Hai bên nối qua Ethernet, giao thức S7 trên cổng 102 bằng `python-snap7`.
+## Kiến trúc
 
-Phần cơ khí giữ nguyên từ đồ án gốc; toàn bộ lớp điều khiển được thiết kế lại.
+**Raspberry Pi 4 — Master.** Đọc file Gerber từ USB, chuyển thành `.nc`, phân tích G-code, bù cao độ
+theo leveling map, và chạy giao diện. Sau gia công, đảm nhiệm toàn bộ phần thị giác máy tính.
+
+**S7-1200 — Slave.** Điều khiển 3 trục bằng PTO, spindle bằng PWM, thay dao tự động, dò leveling và
+an toàn máy. Cũng đóng vai trò bàn định vị cho camera khi chụp ảnh kiểm tra.
+
+Hai bên nối qua Ethernet, giao thức S7 cổng 102 bằng `python-snap7`.
+
+```
+Gerber ──USB──► Pi 4 ──► .nc ──► phân tích, bù z ──Ethernet──► PLC ──► driver ──► động cơ bước
+                                                                        │
+                       kết quả kiểm tra ◄── YOLO ◄── ảnh ◄── camera ◄────┘
+```
+
+Phần cơ khí giữ nguyên hoàn toàn từ đồ án gốc; lớp điều khiển được thiết kế lại.
 
 ## Tài liệu
 
@@ -15,8 +27,9 @@ Phần cơ khí giữ nguyên từ đồ án gốc; toàn bộ lớp điều khi
 |---|---|
 | [`docs/thiet-bi-va-chuc-nang.md`](docs/thiet-bi-va-chuc-nang.md) | Danh sách thiết bị (BOM) và danh sách chức năng đầy đủ |
 | [`docs/chuc-nang-plc.md`](docs/chuc-nang-plc.md) | Đặc tả PLC: phân bổ I/O, khối hàm, Data Block, an toàn, đấu dây |
-| [`docs/xu-ly-anh.md`](docs/xu-ly-anh.md) | Pipeline 12 bước: PDF → Acode polyline |
-| [`docs/so-sanh-stm32-vs-s7.md`](docs/so-sanh-stm32-vs-s7.md) | Đối chiếu bản gốc ↔ bản PLC: cái mất, cái được |
+| [`docs/gerber-sang-nc.md`](docs/gerber-sang-nc.md) | Sinh đường chạy dao: Gerber + Excellon → `.nc` |
+| [`docs/kiem-tra-quang-hoc.md`](docs/kiem-tra-quang-hoc.md) | Kiểm tra quang học tự động (AOI) bằng thị giác máy và YOLO |
+| [`docs/so-sanh-stm32-vs-s7.md`](docs/so-sanh-stm32-vs-s7.md) | Đối chiếu bản gốc ↔ bản mới: cái mất, cái được |
 
 ## Nguồn gốc
 
@@ -34,5 +47,8 @@ Tài liệu đánh dấu rõ ba loại thông tin, **không được lẫn lộn
 | `[DS]` | Thông số datasheet nhà sản xuất |
 | `[ĐX]` | **Đề xuất thiết kế mới — ước lượng, chưa kiểm chứng, phải đo lại** |
 
-Đặc biệt: **thông số PWM siết/nhả dao của đồ án gốc đo ở 12 V nên không còn đúng khi chuyển sang
-24 V** — bắt buộc thực nghiệm lại trước khi vận hành.
+Ba điểm bắt buộc kiểm chứng trước khi vận hành:
+
+1. **Thông số PWM siết/nhả dao đo ở 12 V nên không còn đúng ở 24 V** — phải thực nghiệm lại
+2. **Điện trở hạn dòng 2 kΩ** cho ngõ vào driver ở mức 24 V — thiếu là cháy opto ngay lần cấp điện đầu
+3. **Thời gian suy luận YOLO trên Pi 4** mới là ước lượng — phải đo thực tế để xác nhận chu kỳ kiểm tra

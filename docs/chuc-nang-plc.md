@@ -16,17 +16,18 @@ phình to, mất tính tất định, và phải chống chọi với điểm y�
 
 | Raspberry Pi 4 — Master | S7-1200 — Slave |
 |---|---|
-| Đọc USB, rasterize PDF, xử lý ảnh, trích polyline | **Không** đụng tới file |
-| Biên dịch Acode | **Không** phân tích cú pháp |
+| Đọc USB, chuyển Gerber + Excellon → `.nc` | **Không** đụng tới file |
+| Phân tích cú pháp G-code, tuyến tính hóa cung tròn | **Không** phân tích cú pháp |
 | Tính leveling map (66 điểm → phương trình mặt phẳng) và **bù z sẵn vào từng lệnh** | **Không** tính nội suy mặt phẳng |
 | Chia nhỏ đoạn dài để z bám bề mặt | **Không** chia đoạn |
 | Sắp thứ tự đường chạy, tối ưu quãng di chuyển | **Không** tối ưu quỹ đạo |
 | Giao diện, lưu trữ, mô phỏng Preview | **Không** có UI |
+| **Toàn bộ xử lý ảnh AOI**: ghép ảnh, phân đoạn, sinh ứng viên, suy luận YOLO | **Chỉ** di chuyển tới vị trí chụp và báo đã tới nơi |
 | | **Thực thi** chuyển động, I/O, ATC, an toàn, dò probe |
 
 **Nguyên tắc:** PLC chỉ nhận lệnh **đã sẵn sàng chạy** — tọa độ tuyệt đối, z đã bù, tốc độ đã tính.
 Nhờ vậy chương trình PLC gọn, tất định, và **không phụ thuộc vào định dạng file** — sau này đổi
-định dạng Acode chỉ phải sửa phía Pi.
+định dạng file chỉ phải sửa phía Pi.
 
 ---
 
@@ -133,7 +134,7 @@ Ghép các Unit theo một luật điều khiển. Đúng định nghĩa "Integr
 | Khối | Chức năng |
 |---|---|
 | `OB1` | Chu kỳ chính, gọi `FB_Sequence` và `FB_Comm` |
-| `FB_Sequence` | Máy trạng thái: `IDLE → HOMING → LEVELING → READY → RUNNING → PAUSED → ERROR` |
+| `FB_Sequence` | Máy trạng thái: `IDLE → HOMING → LEVELING → READY → RUNNING → INSPECTING → PAUSED → ERROR` |
 | `FB_Comm` | Giải mã `DB_Command`, cập nhật `DB_Status`, quản lý ring buffer và bắt tay |
 
 ### 3.4 OB đặc biệt
@@ -178,7 +179,7 @@ Hai trục xuất phát cùng lúc và về đích cùng lúc → quỹ đạo l
 Chờ cả hai cờ `Done` mới nhận lệnh kế.
 
 **Hạn chế cần biết:** cách này chỉ dựng được **đường thẳng**, không có cung tròn. Với gia công PCB
-thì đủ, vì mọi biên dạng đều đã được rút gọn thành polyline ở khâu xử lý ảnh.
+thì đủ, vì cung tròn `G02`/`G03` đã được tuyến tính hóa trên Pi (xem `gerber-sang-nc.md` §6).
 
 ### 4.3 Chuỗi thay dao tự động — `FB_ToolChange`
 
@@ -197,6 +198,33 @@ thì đủ, vì mọi biên dạng đều đã được rút gọn thành polyli
 > **Thông số PWM siết/nhả của đồ án gốc (200/200 ms và 250/250 ms) đo ở 12 V, không dùng được ở
 > 24 V.** Phải lặp lại quy trình thực nghiệm 5 lần/bộ thông số như đồ án đã làm.
 
+### 4.4 Chuỗi chụp ảnh kiểm tra — trạng thái `INSPECTING`
+
+Sau khi gia công xong, PLC chuyển sang trạng thái `INSPECTING`. **PLC không xử lý ảnh** — nó chỉ
+đóng vai trò bàn định vị cho camera:
+
+```
+1. Nâng Z về chiều cao lấy nét đã hiệu chuẩn
+2. Tắt spindle (M05) — bắt buộc, tránh rung khi chụp
+3. Lặp cho k = 1..20:
+      a. Nhận lệnh cmd_id = 9 (goto_capture) với tọa độ tile thứ k
+      b. MC_MoveAbsolute tới (x_k, y_k)
+      c. Chờ Done, thêm thời gian ổn định (~0,5 s) để tắt dao động cơ khí
+      d. Đặt cờ done trong DB_Status → Pi chụp ảnh
+      e. Chờ Pi xác nhận đã chụp xong qua int_sys
+4. Về vị trí chờ, chuyển trạng thái READY
+```
+
+> **Thời gian ổn định sau khi dừng là bắt buộc.** Bàn máy còn dao động cơ khí vài trăm mili-giây sau
+> khi trục báo `Done`. Chụp ngay lúc đó cho ảnh nhòe, mà nhòe ở mức vài chục µm là đủ phá hỏng khả
+> năng phát hiện khuyết tật 0,1 mm.
+
+> **Bắt buộc tắt spindle trước khi chụp.** Ngoài rung động, spindle quay còn gây nhiễu điện lên
+> đường tín hiệu — cùng lý do đã phải có relay ngắt tín hiệu leveling ở `Q1.1`.
+
+Độ chính xác định vị của máy (2,5 µm) nhỏ hơn GSD của camera (13 µm) một bậc, nên tọa độ máy tại mỗi
+lần chụp **chính là thông tin đăng ký ảnh** — xem `kiem-tra-quang-hoc.md` §5.2.
+
 ---
 
 ## 5. Cấu trúc Data Block
@@ -208,7 +236,7 @@ thì đủ, vì mọi biên dạng đều đã được rút gọn thành polyli
 
 | Biến | Kiểu | Ý nghĩa |
 |---|---|---|
-| `cmd_id` | `Int` | 0 none · 1 line · 2 drill · 3 cut · 4 toolchange · 5 home · 6 level · 7 jog · 8 stop |
+| `cmd_id` | `Int` | 0 none · 1 line · 2 drill · 3 cut · 4 toolchange · 5 home · 6 level · 7 jog · 8 stop · **9 goto_capture** |
 | `x`, `y`, `z` | `DInt` | Tọa độ đích, đơn vị **µm**. `z` **đã được Pi bù leveling map** |
 | `feed` | `Int` | Tốc độ, mm/s × 10 |
 | `tool` | `Int` | Số ổ dao 1–6 |
@@ -278,8 +306,8 @@ status = client.db_read(2, 0, 24)       # đọc DB_Status
 > PLC tiêu thụ dần, Pi nạp tiếp khi trống. Bắt tay `int_sys`/`int_cnc` đếm **theo ô buffer** thay vì
 > theo từng lệnh.
 >
-> Đây là lý do thứ hai — độc lập với chuyện PTO không nội suy — khiến Acode **bắt buộc** phải là
-> polyline chứ không thể là pixel.
+> Đây là lý do thứ hai — độc lập với chuyện PTO không nội suy — khiến chương trình gia công
+> **bắt buộc** phải ở dạng đoạn thẳng vector chứ không thể ở dạng từng điểm ảnh.
 
 **Phương án thay thế** nếu không muốn mở PUT/GET (nó làm yếu bảo mật CPU):
 
@@ -376,5 +404,6 @@ Hai thông số đặt bằng **DIP switch trên driver**, không phải bằng 
 | File | Nội dung |
 |---|---|
 | [`thiet-bi-va-chuc-nang.md`](thiet-bi-va-chuc-nang.md) | Danh sách thiết bị và chức năng tổng thể |
-| [`xu-ly-anh.md`](xu-ly-anh.md) | Pipeline PDF → Acode polyline |
+| [`gerber-sang-nc.md`](gerber-sang-nc.md) | Sinh đường chạy dao từ file Gerber |
+| [`kiem-tra-quang-hoc.md`](kiem-tra-quang-hoc.md) | Kiểm tra quang học tự động sau gia công |
 | [`so-sanh-stm32-vs-s7.md`](so-sanh-stm32-vs-s7.md) | Đối chiếu bản gốc ↔ bản PLC |
