@@ -32,6 +32,7 @@ Phần cơ khí giữ nguyên hoàn toàn từ đồ án gốc; lớp điều kh
 | [`docs/luu-do-giai-thuat.md`](docs/luu-do-giai-thuat.md) | Tập hợp lưu đồ giải thuật toàn hệ thống |
 | [`docs/dinh-vi-va-toi-uu-phoi.md`](docs/dinh-vi-va-toi-uu-phoi.md) | Định vị phôi và tối ưu tận dụng phôi thừa |
 | [`docs/so-sanh-stm32-vs-s7.md`](docs/so-sanh-stm32-vs-s7.md) | Đối chiếu bản gốc ↔ bản mới: cái mất, cái được |
+| [`docs/images/`](docs/images/) | **14 lưu đồ xuất sẵn dạng PNG và SVG** để chèn vào báo cáo |
 
 ## Nguồn gốc
 

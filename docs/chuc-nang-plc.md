@@ -405,7 +405,7 @@ Hai thông số đặt bằng **DIP switch trên driver**, không phải bằng 
 
 ```mermaid
 flowchart LR
-    subgraph NGUON["KHỐI NGUỒN"]:::proc
+    subgraph NGUON["KHỐI NGUỒN"]
         direction TB
         AC["220 VAC"]:::proc --> CB["Aptomat<br/>+ cầu chì"]:::proc
         CB --> PS1["Nguồn xung<br/>24 V / 15 A<br/><b>động lực</b>"]:::proc
@@ -413,7 +413,7 @@ flowchart LR
         PS1 --> DCDC["DC-DC<br/>24 V → 5 V / 5 A"]:::proc
     end
 
-    subgraph MASTER["RASPBERRY PI 4 — MASTER"]:::proc
+    subgraph MASTER["RASPBERRY PI 4 — MASTER"]
         direction TB
         PI["Pi 4 (4 GB)"]:::proc
         USB[("USB<br/>file Gerber")] -->|USB 3.0| PI
@@ -422,14 +422,14 @@ flowchart LR
         LED["Đèn vòng LED<br/>khuếch tán"]:::proc -.->|chiếu sáng| CAM
     end
 
-    subgraph SLAVE["S7-1200 1214C DC/DC/DC — SLAVE"]:::proc
+    subgraph SLAVE["S7-1200 1214C DC/DC/DC — SLAVE"]
         direction TB
         PLC["CPU 1214C"]:::proc
         SM["SM 1223<br/>DI8/DQ8"]:::proc
         PLC --- SM
     end
 
-    subgraph CONGSUAT["KHỐI CÔNG SUẤT"]:::proc
+    subgraph CONGSUAT["KHỐI CÔNG SUẤT"]
         direction TB
         DRX["DM542 — X"]:::proc --> MX["NEMA17 X"]:::proc
         DRY["DM542 — Y"]:::proc --> MY["NEMA17 Y"]:::proc
@@ -438,7 +438,7 @@ flowchart LR
         BTS --> SPIN["RS775<br/>trục chính"]:::proc
     end
 
-    subgraph CAMBIEN["CẢM BIẾN & NÚT"]:::proc
+    subgraph CAMBIEN["CẢM BIẾN & NÚT"]
         direction TB
         HOME["Công tắc gốc<br/>X / Y / Z"]:::proc
         LIMIT["Hard limit<br/>X / Y / Z"]:::proc

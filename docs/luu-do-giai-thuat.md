@@ -329,12 +329,8 @@ stateDiagram-v2
     LOCATING --> ERROR: không thấy phôi / theta vượt hạn
     LEVELING --> ERROR: probe lỗi
     ERROR --> IDLE: Reset
-    classDef term fill:#BDD7EE,stroke:#2E75B6,stroke-width:2px,color:#000
     classDef proc fill:#DEEBF7,stroke:#5B9BD5,stroke-width:2px,color:#000
-    classDef io   fill:#DEEBF7,stroke:#5B9BD5,stroke-width:2px,color:#000
-    classDef dec  fill:#9DC3E6,stroke:#2E75B6,stroke-width:2px,color:#000
-    classDef conn fill:#9DC3E6,stroke:#2E75B6,stroke-width:2px,color:#000
-    linkStyle default stroke:#5B9BD5,stroke-width:2px
+    class IDLE,HOMING,LOCATING,LEVELING,READY,RUNNING,INSPECTING,PAUSED,ERROR proc
 ```
 
 ---
