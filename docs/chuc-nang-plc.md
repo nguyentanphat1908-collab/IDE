@@ -399,11 +399,165 @@ Hai thông số đặt bằng **DIP switch trên driver**, không phải bằng 
 
 ---
 
+## 8. Sơ đồ nguyên lý
+
+### 8.1 Sơ đồ khối toàn hệ thống
+
+```mermaid
+flowchart LR
+    subgraph NGUON["KHỐI NGUỒN"]
+        direction TB
+        AC["220 VAC"] --> CB["Aptomat<br/>+ cầu chì"]
+        CB --> PS1["Nguồn xung<br/>24 V / 15 A<br/><b>động lực</b>"]
+        CB --> PS2["PM1207<br/>24 V / 2,5 A<br/><b>điều khiển</b>"]
+        PS1 --> DCDC["DC-DC<br/>24 V → 5 V / 5 A"]
+    end
+
+    subgraph MASTER["RASPBERRY PI 4 — MASTER"]
+        direction TB
+        PI["Pi 4 (4 GB)"]
+        USB[("USB<br/>file Gerber")] -->|USB 3.0| PI
+        PI <-->|"CSI"| CAM["HQ Camera IMX477<br/>+ ống kính C-mount 12 mm"]
+        PI <-->|"SPI + GPIO"| LCD["LCD cảm ứng 3.5 inch"]
+        LED["Đèn vòng LED<br/>khuếch tán"] -.->|chiếu sáng| CAM
+    end
+
+    subgraph SLAVE["S7-1200 1214C DC/DC/DC — SLAVE"]
+        direction TB
+        PLC["CPU 1214C"]
+        SM["SM 1223<br/>DI8/DQ8"]
+        PLC --- SM
+    end
+
+    subgraph CONGSUAT["KHỐI CÔNG SUẤT"]
+        direction TB
+        DRX["DM542 — X"] --> MX["NEMA17 X"]
+        DRY["DM542 — Y"] --> MY["NEMA17 Y"]
+        DRZ["DM542 — Z"] --> MZ["NEMA17 Z"]
+        OPTO["Board opto<br/>24 V → 5 V"] --> BTS["BTS7960"]
+        BTS --> SPIN["RS775<br/>trục chính"]
+    end
+
+    subgraph CAMBIEN["CẢM BIẾN & NÚT"]
+        direction TB
+        HOME["Công tắc gốc<br/>X / Y / Z"]
+        LIMIT["Hard limit<br/>X / Y / Z"]
+        PROBE["Cảm biến<br/>leveling"]
+        BTN["Start / Stop / Reset"]
+    end
+
+    ESTOP["E-STOP<br/>+ relay an toàn"]
+
+    PS2 --> PLC
+    DCDC --> PI
+    PS1 -->|24 V| CONGSUAT
+    ESTOP ==>|"cắt cứng 24 V"| PS1
+
+    PI <==>|"Ethernet RJ45<br/>ISO-TCP:102 · snap7"| PLC
+
+    PLC -->|"Q0.0–Q0.5 xung/hướng<br/>Q0.7 ENA"| DRX
+    PLC --> DRY
+    PLC --> DRZ
+    PLC -->|"Q0.6 PWM<br/>Q1.0 đảo chiều"| OPTO
+    CAMBIEN -->|"I0.0–I0.7<br/>I1.0–I1.5"| PLC
+    ESTOP -.->|"I0.7 tiếp điểm phụ<br/>chỉ để biết trạng thái"| PLC
+```
+
+Hai đường nguồn **tách biệt** là chi tiết quan trọng: PM1207 cấp riêng cho PLC, nguồn 15 A cấp cho
+động lực. Chung nguồn thì nhiễu từ driver bước và spindle sẽ gây reset CPU hoặc đọc sai ngõ vào.
+
+### 8.2 Sơ đồ đấu driver bước
+
+Đây là hình quan trọng nhất trong tài liệu — **sai kiểu đấu thì driver không nhận xung, thiếu điện
+trở thì cháy opto ngay lần cấp điện đầu**.
+
+```
+   S7-1200 DC/DC/DC                                    DM542 / TB6600
+   (ngõ ra SOURCING/PNP, 24 V)                         (mỗi trục 1 driver)
+   +------------------+                               +--------------------+
+   |                  |                               |                    |
+   |  Q0.0 (PTO1) ----+---[ 2 kΩ  0,25 W ]----------->| PUL+               |
+   |  Q0.1        ----+---[ 2 kΩ  0,25 W ]----------->| DIR+               |
+   |  Q0.7 (ENA)  ----+---[ 2 kΩ  0,25 W ]----------->| ENA+               |
+   |                  |                               |                    |
+   |                  |                    +--------->| PUL-               |
+   |  M (0 V)     ----+--------------------+--------->| DIR-               |   <- CHUNG ÂM
+   |                  |                    +--------->| ENA-               |
+   +------------------+                               |                    |
+                                                      |                    |
+   Nguồn 24 V / 15 A -------------------------------->| VCC                |
+   0 V              --------------------------------->| GND                |
+                                                      |                    |
+                                                      |  A+  A-  B+  B-    |
+                                                      +---+---+---+---+----+
+                                                          |   |   |   |
+                                                       cáp có lưới chắn,
+                                                       nối PE một đầu phía tủ
+                                                          |   |   |   |
+                                                        +-+---+---+---+-+
+                                                        |   NEMA17      |
+                                                        |  0,45 N.m     |
+                                                        +---------------+
+   DIP switch trên driver:  dòng 1,4–1,6 A  ·  vi bước 1/16 (3200 xung/vòng)
+```
+
+| Chi tiết | Vì sao bắt buộc |
+|---|---|
+| **Chung âm (common cathode)** | Ngõ ra S7-1200 DC/DC/DC là sourcing/PNP — đóng +24 V xuống tải. Nối `PUL−/DIR−/ENA−` về chân M, chân Q vào các đầu `+`. **Đấu ngược là driver không nhận xung** |
+| **Điện trở 2 kΩ trên mỗi đường** | Ngõ vào driver là opto thiết kế cho 5 V. DM542 ghi rõ: 5 V không cần · 12 V thêm 1 kΩ · **24 V thêm 2 kΩ**. Tổng 9 điện trở cho 3 trục |
+| **Cáp lưới chắn, nối đất một đầu** | Xử lý gốc rễ vấn đề nhiễu mà đồ án gốc phải chế mạch khử rung riêng để đối phó |
+
+### 8.3 Sơ đồ mạch an toàn
+
+```
+        220 VAC
+           |
+      +----+----+
+      | Aptomat |
+      +----+----+
+           |
+     +-----+------+
+     |            |
++----+-----+  +---+--------+
+| PM1207   |  | Nguồn xung |
+| 24V/2,5A |  | 24 V / 15 A|
+| (PLC)    |  | (động lực) |
++----+-----+  +---+--------+
+     |            |
+     |       +----+--------------+
+     |       |  TIẾP ĐIỂM CHÍNH  |<------+
+     |       |  relay an toàn    |       |
+     |       +----+--------------+       |
+     |            |                      |
+     |            v                 +----+-----+
+     |     driver bước x3           |  E-STOP  |  nút nhấn giữ
+     |     BTS7960 -> spindle       |  (NC)    |
+     |                              +----+-----+
+     |                                   |
+     v                                   | tiếp điểm phụ
+   CPU 1214C <------ I0.7 ---------------+
+   (VẪN SỐNG khi nhấn E-stop,
+    chỉ ĐỌC trạng thái để hiển thị)
+```
+
+> **PLC không nằm trong đường cắt.** Nhấn E-stop thì relay an toàn cắt thẳng nguồn 24 V động lực,
+> động cơ và spindle mất điện ngay — không phụ thuộc chương trình PLC. PLC vẫn được cấp nguồn riêng
+> từ PM1207 nên hiển thị được trạng thái và khóa chương trình, nhưng nó **không phải thứ quyết định
+> việc dừng**.
+>
+> Đây là nguyên tắc an toàn máy, không phải lựa chọn thiết kế: PLC có thể treo, lỗi chương trình,
+> hoặc hỏng. Đồ án gốc **không có** lớp bảo vệ này.
+
+---
+
+
 ## Tài liệu liên quan
 
 | File | Nội dung |
 |---|---|
 | [`thiet-bi-va-chuc-nang.md`](thiet-bi-va-chuc-nang.md) | Danh sách thiết bị và chức năng tổng thể |
 | [`gerber-sang-nc.md`](gerber-sang-nc.md) | Sinh đường chạy dao từ file Gerber |
+| [`luu-do-giai-thuat.md`](luu-do-giai-thuat.md) | Tập hợp lưu đồ giải thuật toàn hệ thống |
+| [`dinh-vi-va-toi-uu-phoi.md`](dinh-vi-va-toi-uu-phoi.md) | Định vị phôi và tối ưu tận dụng phôi thừa |
 | [`kiem-tra-quang-hoc.md`](kiem-tra-quang-hoc.md) | Kiểm tra quang học tự động sau gia công |
 | [`so-sanh-stm32-vs-s7.md`](so-sanh-stm32-vs-s7.md) | Đối chiếu bản gốc ↔ bản PLC |
