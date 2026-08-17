@@ -97,7 +97,7 @@ NEMA17 (0,45 N.m) dư rất nhiều biên.
 
 1. **Gigabit Ethernet onboard.** Pi Zero 2W **không có cổng Ethernet nào** — chỉ WiFi. Link snap7
    tới PLC lẽ ra phải qua adapter USB hoặc WiFi: không tất định, dễ nhiễu trong tủ điện.
-2. **RAM 4 GB thay 512 MB.** Ảnh kiểm tra quang học sau gia công gồm 20 tile × 11,9 MP ≈ 0,72 GB
+2. **RAM 4 GB thay 512 MB.** Ảnh kiểm tra quang học sau gia công gồm 16 tile × 12,3 MP ≈ 0,59 GB
    dữ liệu thô — **không chạy nổi trên 512 MB**. Xem `kiem-tra-quang-hoc.md` §5.2.
 3. **4× Cortex-A72 + USB 3.0.** Cần cho suy luận YOLO trên thiết bị biên không GPU, và rút ngắn
    thời gian đọc USB.
@@ -161,26 +161,30 @@ Số lượng công tắc hành trình là `[ĐX]` — đồ án gốc không n�
 
 | # | Thiết bị | SL | Thông số | Chức năng |
 |---|---|---|---|---|
-| 32 | **Raspberry Pi Camera Module 3** | 1 | Sony IMX708 · 11,9 MP (4608 × 2592) · lấy nét tự động · giao tiếp CSI `[DS]` | Chụp ảnh bo sau gia công |
-| 33 | **Đèn vòng LED khuếch tán** | 1 | CRI cao, nhiệt độ màu cố định | **Triệt phản xạ gương trên bề mặt đồng** |
-| 34 | Giá gắn camera + đèn | 1 | Gắn trên cụm trục chính, di chuyển cùng | Chụp ghép theo lưới bằng chính chuyển động máy |
-| 35 | Che chắn khoang chụp | 1 | — | Loại nhiễu do ánh sáng phòng thay đổi |
-| 36 | *(Tùy chọn)* Google Coral USB Accelerator | 1 | Edge TPU | Tăng tốc suy luận YOLO nếu cần |
+| 32 | **Raspberry Pi HQ Camera** | 1 | Sony IMX477 · 12,3 MP (4056 × 3040) · **ngàm C/CS** · lấy nét và khẩu độ **chỉnh tay** · giao tiếp CSI `[DS]` | Chụp ghép ảnh bo sau gia công |
+| 33 | **Ống kính C-mount 12 mm** | 1 | Cho FOV 54 mm ở khoảng cách 115 mm · dùng ở khẩu f/8 → DOF 4,09 mm `[ĐX]` | Đặt trường nhìn và độ phân giải cho AOI |
+| 34 | **Đèn vòng LED khuếch tán** | 1 | CRI cao, nhiệt độ màu cố định | **Triệt phản xạ gương trên bề mặt đồng** |
+| 35 | Giá gắn camera + đèn | 1 | Gắn trên cụm trục chính, di chuyển cùng | Chụp ghép theo lưới bằng chính chuyển động máy |
+| 36 | Che chắn khoang chụp | 1 | — | Loại nhiễu do ánh sáng phòng thay đổi |
+| 37 | *(Tùy chọn)* Google Coral USB Accelerator | 1 | Edge TPU | Tăng tốc suy luận YOLO nếu cần |
 
 > **Chiếu sáng khuếch tán là bắt buộc, không phải tùy chọn.** Đồng có phản xạ gương mạnh; chiếu sáng
 > trực tiếp tạo điểm chói bão hòa làm hỏng bước phân đoạn đồng/nền. Xem `kiem-tra-quang-hoc.md` §5.3.
 
 > **Camera gắn trên cụm trục chính** để tận dụng cơ cấu định vị 2,5 µm của máy làm phương tiện quét
-> ảnh — đạt độ phân giải 13 µm/px mà không cần ống kính telecentric đắt tiền.
+> ảnh — đạt độ phân giải 13,3 µm/px mà không cần ống kính telecentric đắt tiền.
+
+> **Phải đo khoảng hở từ dầm ngang xuống mặt bàn trước khi mua ống kính.** Tiêu cự 12 mm cần
+> 115 mm; nếu hẹp hơn dùng 8 mm (77 mm), rộng hơn dùng 16 mm (153 mm).
 
 ## A4. Phần mềm
 
 | # | Thành phần | Nền tảng | Chức năng | Trạng thái |
 |---|---|---|---|---|
-| 37 | **App xuất file** (PC) | Python + Tkinter, kiến trúc **Framework_ADL** `[ĐA]` | Gerber + Excellon → file `.nc` | **Viết lại: bỏ xử lý ảnh, dùng pcb2gcode** |
-| 38 | **App giao diện** (Pi 4) | Python, Framework_ADL `[ĐA]` | UI, đọc USB, phân tích `.nc`, bù z, giao tiếp PLC | **Thêm `Service_S7Comm` (python-snap7)** |
-| 39 | **Module AOI** (Pi 4) | Python + OpenCV + YOLO (ONNX/NCNN) | Chụp ghép, phân đoạn, sinh ứng viên, phát hiện khuyết tật | **Mới hoàn toàn** |
-| 40 | **Chương trình PLC** | TIA Portal, SCL + LAD | Chuyển động, I/O, ATC, chụp ảnh, an toàn | **Mới hoàn toàn — thay Firmware_ADL** |
+| 38 | **App xuất file** (PC) | Python + Tkinter, kiến trúc **Framework_ADL** `[ĐA]` | Gerber + Excellon → file `.nc` | **Viết lại: bỏ xử lý ảnh, dùng pcb2gcode** |
+| 39 | **App giao diện** (Pi 4) | Python, Framework_ADL `[ĐA]` | UI, đọc USB, phân tích `.nc`, bù z, giao tiếp PLC | **Thêm `Service_S7Comm` (python-snap7)** |
+| 40 | **Module AOI** (Pi 4) | Python + OpenCV + YOLO (ONNX/NCNN) | Chụp ghép, phân đoạn, sinh ứng viên, phát hiện khuyết tật | **Mới hoàn toàn** |
+| 41 | **Chương trình PLC** | TIA Portal, SCL + LAD | Chuyển động, I/O, ATC, chụp ảnh, an toàn | **Mới hoàn toàn — thay Firmware_ADL** |
 
 ## A5. Phân bổ I/O
 
@@ -240,6 +244,7 @@ Kể cả nâng lên vi bước 1/32 (16 kHz) vẫn còn dư rất nhiều biên
 | **Nguồn xung 12 V – 20 A** | Toàn máy chuyển sang 24 V |
 | **Bo mạch module tự thiết kế** | Thay bằng tủ điện, DIN rail, terminal chuẩn công nghiệp |
 | **Raspberry Pi Zero 2W** | Không có cổng Ethernet; 512 MB không đủ cho ảnh AOI và suy luận YOLO |
+| **Pi Camera Module 3** | **Ống kính gắn liền, lấy nét gần nhất ~100 mm** → tốt nhất chỉ đạt 3,55 px trên khuyết tật 0,1 mm, không đạt R1 |
 | **Pipeline PDF + xử lý ảnh** | Thay bằng Gerber → `.nc`: dữ liệu vector, không sai số lượng tử hóa, các layer đồng bộ theo chuẩn |
 
 ---
@@ -257,7 +262,7 @@ Người dùng tick chọn quy trình cần chạy ở tab Select mode `[ĐA]`.
 | 3 | **Phay mặt** | Bóc vùng đồng thừa |
 | 4 | **Cắt viền mạch** | Cắt rời bo theo đường viền ngoài |
 | 5 | **Thay dao tự động (ATC)** | 6 ổ dao cố định, spindle đảo chiều để siết/nhả |
-| 6 | **Kiểm tra quang học sau gia công (AOI)** | **Mới** — chụp ghép 20 tile, phát hiện và phân loại 8 lớp khuyết tật, hiển thị bản đồ lỗi. Xem `kiem-tra-quang-hoc.md` |
+| 6 | **Kiểm tra quang học sau gia công (AOI)** | **Mới** — chụp ghép 16 tile, phát hiện và phân loại 8 lớp khuyết tật, hiển thị bản đồ lỗi. Xem `kiem-tra-quang-hoc.md` |
 
 ## B2. Chức năng hệ thống và hiệu chuẩn
 

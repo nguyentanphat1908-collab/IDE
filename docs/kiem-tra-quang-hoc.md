@@ -149,7 +149,7 @@ và sự kết hợp cho **tính khả thi tính toán**.
 flowchart TD
     A([Gia công xong]) --> B[Di chuyển tới vị trí chụp thứ k]
     B --> C[Chụp ảnh màu<br/>chiếu sáng khuếch tán]
-    C --> D{Đã đủ<br/>20 tile?}
+    C --> D{Đã đủ<br/>16 tile?}
     D -- chưa --> B
     D -- rồi --> E[Hiệu chuẩn méo ống kính<br/>và ghép ảnh theo tọa độ máy]
     E --> F[Phân đoạn đồng / nền<br/>không gian màu HSV]
@@ -179,12 +179,25 @@ Số điểm ảnh cần theo chiều rộng bo:
 
 $$W_{px} = \frac{180}{0{,}025} = 7200 \text{ px} \tag{2}$$
 
-**So với cảm biến sẵn có** (Raspberry Pi Camera Module 3, IMX708, 4608 × 2592 px):
+**So sánh các cảm biến khả dụng.** Bảng dưới đây có một cột mà phân tích thị giác máy hay bỏ sót,
+nhưng ở bài toán này lại là **tiêu chí quyết định**: khoảng cách lấy nét tối thiểu.
+
+| Cảm biến | Điểm ảnh | Ống kính | **Lấy nét gần nhất** | GSD tốt nhất đạt được | Khuyết tật 0,1 mm |
+|---|---|---|---|---|---|
+| Pi Camera Module 3 (IMX708) | 4608 × 2592 | **Gắn liền** | ~100 mm | 28,2 µm/px | 3,55 px ✗ |
+| Pi AI Camera (IMX500) | 4056 × 3040 | **Gắn liền** | ~100 mm | ~30 µm/px | ~3,3 px ✗ |
+| ESP32-CAM (OV2640) | 1600 × 1200 | Gắn liền | ~100 mm | 112 µm/px | 0,89 px ✗ |
+| **Pi HQ Camera (IMX477)** | **4056 × 3040** | **Rời, ngàm C/CS** | **Tùy ống kính** | **13,3 µm/px** | **7,5 px ✓** |
+
+**Chỉ HQ Camera đạt yêu cầu R1**, và lý do là **ống kính rời**, không phải số điểm ảnh — IMX500 có
+cùng số điểm ảnh nhưng vẫn trượt. Phân tích đầy đủ ở §5.4.
+
+Cấu hình chốt: **HQ Camera + ống kính C-mount 12 mm**, FOV 54 × 40,5 mm.
 
 | Phương án | GSD | Số px phủ khuyết tật 0,1 mm | Kết luận |
 |---|---|---|---|
-| Chụp **một ảnh** phủ cả bo | 180/4608 = **0,0391 mm/px** | 2,56 px | **Không đạt R1** |
-| Chụp **ghép** (mosaic), FOV rộng 60 mm | 60/4608 = **0,0130 mm/px** | 7,7 px | **Đạt R1** |
+| Chụp **một ảnh** phủ cả bo | 180/4056 = **0,0444 mm/px** | 2,25 px | **Không đạt R1** |
+| Chụp **ghép** (mosaic), FOV rộng 54 mm | 54/4056 = **0,0133 mm/px** | 7,5 px | **Đạt R1** |
 
 ### 5.2 Phương pháp chụp ghép sử dụng chính chuyển động của máy
 
@@ -192,26 +205,30 @@ $$W_{px} = \frac{180}{0{,}025} = 7200 \text{ px} \tag{2}$$
 giải 2,5 µm**. Thay vì dùng ống kính telecentric độ phân giải cao (đắt), ta gắn camera lên cụm trục
 chính và **dùng chính chuyển động của máy để quét ảnh theo lưới**.
 
-Với FOV 60 × 33,8 mm và độ chồng lấn 15%:
+Với FOV 54 × 40,5 mm và độ chồng lấn 15%:
 
-$$n_{cols} = \left\lceil \frac{180}{60 \times 0{,}85} \right\rceil = 4, \qquad
-n_{rows} = \left\lceil \frac{130}{33{,}8 \times 0{,}85} \right\rceil = 5 \tag{3}$$
+$$n_{cols} = \left\lceil \frac{180}{54 \times 0{,}85} \right\rceil = 4, \qquad
+n_{rows} = \left\lceil \frac{130}{40{,}5 \times 0{,}85} \right\rceil = 4 \tag{3}$$
 
-→ **20 tile**, tổng 239 MP, dữ liệu thô ~0,72 GB.
+→ **16 tile**, tổng 197 MP, dữ liệu thô ~0,59 GB.
 
 | Chỉ tiêu | Giá trị |
 |---|---|
-| Thời gian chụp | 20 × (di chuyển 1,5 s + ổn định 0,5 s + chụp 0,3 s) ≈ **46 s** |
-| Bộ nhớ | **Xử lý luần tự từng tile**, không giữ toàn bộ 0,72 GB trong RAM |
+| Thời gian chụp | 16 × (di chuyển 1,5 s + ổn định 0,5 s + chụp 0,3 s) ≈ **37 s** |
+| Bộ nhớ | **Xử lý tuần tự từng tile**, không giữ toàn bộ 0,59 GB trong RAM |
 
 > **Lợi ích kép của phương pháp này:** ngoài độ phân giải, tọa độ máy tại mỗi lần chụp **chính là
-> thông tin đăng ký ảnh**. Sai số định vị của máy (2,5 µm) nhỏ hơn GSD (13 µm) một bậc, nên phép
+> thông tin đăng ký ảnh**. Sai số định vị của máy (2,5 µm) nhỏ hơn GSD (13,3 µm) một bậc, nên phép
 > ghép ảnh gần như không sinh sai số — điều mà ghép ảnh bằng đặc trưng (feature matching) thông
 > thường không đạt được.
 
-> **Ràng buộc bộ nhớ.** Giữ cả 20 tile trong RAM là 0,72 GB dữ liệu thô, chưa kể bản trung gian.
+> **Ràng buộc bộ nhớ.** Giữ cả 16 tile trong RAM là 0,59 GB dữ liệu thô, chưa kể bản trung gian.
 > Bắt buộc xử lý **streaming từng tile**: chụp → phân đoạn → so sánh → lưu vùng ứng viên → giải
 > phóng. Đây là lý do Raspberry Pi 4 (4 GB) khả thi còn Pi Zero 2W (512 MB) thì không.
+
+> **Tỉ lệ khung hình ảnh hưởng tới số tile.** IMX477 tỉ lệ 4:3 nên phủ 40,5 mm chiều dọc, trong khi
+> một cảm biến 16:9 cùng độ phân giải ngang chỉ phủ ~30 mm — mất thêm một hàng tile. Đây là lý do
+> 16 tile thay vì 20 dù GSD gần như nhau.
 
 ### 5.3 Chiếu sáng
 
@@ -230,6 +247,87 @@ làm hỏng bước phân đoạn ở §7. Yêu cầu:
 > **Chiếu sáng đồng nhất giữa các tile quan trọng hơn cường độ tuyệt đối.** Nếu tile 1 và tile 2 có
 > độ sáng khác nhau, ngưỡng phân đoạn sẽ khác nhau, sinh sai khác giả ở đường ghép — biểu hiện thành
 > một dải khuyết tật ảo chạy dọc biên tile.
+
+### 5.4 Ràng buộc quang học và lựa chọn ống kính
+
+Phân tích ở §5.1 mới chỉ trả lời *cần bao nhiêu điểm ảnh*. Nhưng độ phân giải không gian không do
+cảm biến quyết định một mình — nó là **tích hợp của cảm biến và ống kính**. Bỏ qua vế ống kính là
+sai lầm thường gặp, và ở bài toán này nó loại thẳng phần lớn các phương án.
+
+#### 5.4.1 Khoảng cách lấy nét tối thiểu — ràng buộc bị bỏ sót
+
+Với ống kính **gắn liền**, trường nhìn tỉ lệ thuận với khoảng cách làm việc:
+
+$$\text{FOV} = 2\,d\,\tan\frac{\theta}{2} \tag{4}$$
+
+trong đó $d$ là khoảng cách tới vật, $\theta$ là góc nhìn ngang. Muốn FOV nhỏ (để GSD nhỏ) thì phải
+đưa camera lại **thật gần**. Nhưng ống kính gắn liền có giới hạn lấy nét gần nhất.
+
+Với Camera Module 3 ($\theta \approx 66°$, lấy nét gần nhất ~100 mm):
+
+| Khoảng cách | FOV rộng | GSD | Khuyết tật 0,1 mm |
+|---|---|---|---|
+| **100 mm** — gần nhất lấy nét được | 130 mm | 28,2 µm/px | **3,55 px** ✗ |
+| 150 mm | 195 mm | 42,3 µm/px | 2,37 px ✗ |
+| 200 mm | 260 mm | 56,4 µm/px | 1,77 px ✗ |
+
+Để đạt FOV 54 mm cần đặt camera cách bo:
+
+$$d = \frac{54}{2\tan(33°)} = 42 \text{ mm} \tag{5}$$
+
+**Gần hơn khả năng lấy nét.** Ống kính không tháo được nên không có cách khắc phục —
+Camera Module 3 và AI Camera (IMX500) đều bị loại vì lý do này, bất kể số điểm ảnh.
+
+#### 5.4.2 Chọn tiêu cự cho ống kính rời
+
+Ngàm C/CS của HQ Camera cho phép chọn tiêu cự theo khoảng cách lắp đặt thực tế. Độ phóng đại:
+
+$$m = \frac{w_{sensor}}{\text{FOV}} = \frac{6{,}287}{54} = 0{,}116 \tag{6}$$
+
+Khoảng cách làm việc theo công thức thấu kính mỏng:
+
+$$d = f\,\frac{1+m}{m} \approx 9{,}59\,f \tag{7}$$
+
+| Tiêu cự | Khoảng cách camera–bo | Đánh giá |
+|---|---|---|
+| 8 mm | 77 mm | Khi khoảng hở hẹp |
+| **12 mm** | **115 mm** | **Chọn** |
+| 16 mm | 153 mm | Khi khoảng hở rộng |
+| 25 mm | 240 mm | Vượt chiều cao máy 300 mm — loại |
+
+> **Phải đo trước khi mua ống kính:** khoảng hở từ dầm ngang xuống mặt bàn máy. Công thức (7) là
+> gần đúng thấu kính mỏng; ống kính thực có vị trí mặt phẳng chính khác đôi chút, nên **cần chừa
+> dung sai và ưu tiên ống kính có vòng chỉnh nét đủ hành trình**.
+
+#### 5.4.3 Chiều sâu trường ảnh và khẩu độ
+
+Bề mặt phíp đồng không phẳng tuyệt đối — chính lý do tồn tại của leveling map (§B2). Nếu chiều sâu
+trường ảnh nhỏ hơn độ cong vênh, một phần bo sẽ mất nét và bước phân đoạn hỏng ở đúng vùng đó.
+
+$$\text{DOF} \approx \frac{2Nc\,(1+m)}{m^2} \tag{8}$$
+
+với $N$ là trị số khẩu độ, $c$ là đường kính vòng tròn mờ cho phép (lấy ~2 điểm ảnh = 3,1 µm).
+
+| Khẩu độ | DOF |
+|---|---|
+| f/2.8 | 1,43 mm |
+| f/5.6 | 2,86 mm |
+| **f/8** | **4,09 mm** |
+| f/11 | 5,62 mm |
+
+Chọn **f/8**: 4,09 mm thừa sức bao dung sai cong vênh, mà chưa tới ngưỡng nhiễu xạ đáng kể.
+
+#### 5.4.4 Lấy nét tay và khẩu độ tay là *yêu cầu*, không phải thiệt thòi
+
+Đây là điểm dễ bị hiểu ngược, nên nêu rõ:
+
+| Đặc điểm | Vì sao là ưu điểm ở bài toán này |
+|---|---|
+| **Lấy nét tay, cố định** | Lấy nét tự động sẽ **dò nét lại giữa các tile**. Mỗi lần đổi nét làm độ phóng đại thay đổi nhẹ (*focus breathing*) → **phá vỡ giả định GSD không đổi** mà phép ghép ảnh và đăng ký với mặt nạ Gerber (§6.2) dựa hoàn toàn vào. Khóa nét một lần là điều kiện cần |
+| **Khẩu độ chỉnh tay** | Cho phép chọn f/8 để có DOF 4 mm. Camera Module 3 cố định f/1.8 → DOF chỉ ~1,4 mm, không đủ biên cho bo cong vênh |
+
+Nói cách khác, hai "tính năng" của camera tiêu dùng — lấy nét tự động và khẩu độ lớn cố định — đều
+**phản tác dụng** trong đo lường thị giác máy.
 
 ---
 
@@ -254,7 +352,7 @@ Phép biến đổi giữa hệ tọa độ ảnh và hệ tọa độ thiết k
 mặt phẳng camera không song song tuyệt đối với bàn máy):
 
 $$\begin{bmatrix} x' \\ y' \\ 1 \end{bmatrix} =
-H \begin{bmatrix} x \\ y \\ 1 \end{bmatrix} \tag{4}$$
+H \begin{bmatrix} x \\ y \\ 1 \end{bmatrix} \tag{9}$$
 
 Ước lượng $H$ bằng **điểm chuẩn (fiducial)**: phay 3 dấu chuẩn tại tọa độ đã biết ở góc bo trong
 cùng chương trình gia công. Vì chúng do chính máy tạo ra, sai số vị trí của chúng bằng sai số máy.
@@ -274,7 +372,7 @@ tương phản rõ với nền FR4:
 $$M(x,y) = \begin{cases}
 1 & \text{nếu } H_{min} \le H(x,y) \le H_{max} \ \wedge\ S(x,y) \ge S_{min} \\
 0 & \text{ngược lại}
-\end{cases} \tag{5}$$
+\end{cases} \tag{10}$$
 
 Sau đó khử nhiễu bằng phép mở/đóng hình thái (morphological opening/closing).
 
@@ -283,7 +381,7 @@ chỉnh lại nếu đổi loại phíp đồng hoặc đổi đèn**.
 
 ### 6.4 Sinh vùng ứng viên
 
-$$D = M_{obs} \oplus M_{ref} \tag{6}$$
+$$D = M_{obs} \oplus M_{ref} \tag{11}$$
 
 trong đó $\oplus$ là phép XOR theo từng điểm ảnh, $M_{obs}$ là mặt nạ đồng quan sát được,
 $M_{ref}$ là mặt nạ lý tưởng.
@@ -326,7 +424,7 @@ Chọn **YOLO** do ràng buộc R3 (Raspberry Pi 4, không GPU rời). Trong h�
 | Quét vét toàn ảnh (sliding window) | 800 | **3 – 4 phút** | Vi phạm R4 |
 | **Chỉ chạy trên vùng ứng viên** | ~50 | **10 – 15 s** | **Đạt R4** |
 
-Cộng thời gian chụp 46 s và xử lý ảnh, tổng chu kỳ kiểm tra ước tính **80 – 110 s**, đạt R4.
+Cộng thời gian chụp 37 s và xử lý ảnh, tổng chu kỳ kiểm tra ước tính **~72 s**, đạt R4.
 
 > **Phương án tăng tốc nếu cần:** gắn thêm **Google Coral USB Accelerator** (Edge TPU) đưa thời gian
 > suy luận xuống cỡ hàng chục mili-giây, khi đó quét vét toàn ảnh cũng trở nên khả thi. Đổi lại là
@@ -379,16 +477,16 @@ giảm mạnh công sức xây dựng tập dữ liệu và loại bỏ sai lệ
 
 Với TP, FP, FN lần lượt là số phát hiện đúng, báo nhầm, bỏ sót:
 
-$$P = \frac{TP}{TP+FP}, \qquad R = \frac{TP}{TP+FN}, \qquad F_1 = \frac{2PR}{P+R} \tag{7}$$
+$$P = \frac{TP}{TP+FP}, \qquad R = \frac{TP}{TP+FN}, \qquad F_1 = \frac{2PR}{P+R} \tag{12}$$
 
 Một phát hiện được tính là đúng khi độ trùng khớp với hộp bao thực đạt ngưỡng:
 
-$$\text{IoU} = \frac{|B_{pred} \cap B_{gt}|}{|B_{pred} \cup B_{gt}|} \ge 0{,}5 \tag{8}$$
+$$\text{IoU} = \frac{|B_{pred} \cap B_{gt}|}{|B_{pred} \cup B_{gt}|} \ge 0{,}5 \tag{13}$$
 
 Độ chính xác trung bình theo lớp và trung bình toàn cục:
 
 $$AP_c = \int_0^1 P_c(R)\,dR, \qquad
-\text{mAP} = \frac{1}{|C|}\sum_{c \in C} AP_c \tag{9}$$
+\text{mAP} = \frac{1}{|C|}\sum_{c \in C} AP_c \tag{14}$$
 
 Báo cáo cả **mAP@0.5** và **mAP@0.5:0.95**, kèm **AP riêng cho từng lớp** `D1`–`D8` và **ma trận
 nhầm lẫn**.
@@ -397,9 +495,9 @@ nhầm lẫn**.
 
 Ngoài các độ đo học thuật, cần báo cáo hai chỉ số mà ngành kiểm tra chất lượng dùng trực tiếp:
 
-$$\text{Escape rate} = \frac{FN}{TP+FN} = 1 - R \tag{10}$$
+$$\text{Escape rate} = \frac{FN}{TP+FN} = 1 - R \tag{15}$$
 
-$$\text{False call rate} = \frac{FP}{\text{số bo được kiểm tra}} \tag{11}$$
+$$\text{False call rate} = \frac{FP}{\text{số bo được kiểm tra}} \tag{16}$$
 
 Escape rate phản ánh trực tiếp yêu cầu R2. False call rate phản ánh công sức người vận hành phải
 bỏ ra để kiểm tra lại — nếu quá cao thì hệ thống sẽ bị bỏ qua trong thực tế dù chỉ số học thuật đẹp.
@@ -408,7 +506,7 @@ bỏ ra để kiểm tra lại — nếu quá cao thì hệ thống sẽ bị b�
 
 | Chỉ tiêu | Cách đo |
 |---|---|
-| Thời gian chụp | Đo trực tiếp, kỳ vọng ~46 s |
+| Thời gian chụp | Đo trực tiếp, kỳ vọng ~37 s |
 | Thời gian suy luận trung bình/vùng | Đo trên Pi 4, ≥ 100 lần lặp |
 | Tổng chu kỳ kiểm tra | So với yêu cầu R4 (≤ 120 s) |
 | Đỉnh bộ nhớ | Xác nhận không tràn RAM 4 GB |
@@ -419,7 +517,7 @@ bỏ ra để kiểm tra lại — nếu quá cao thì hệ thống sẽ bị b�
 |---|---|
 | **TN1** — Khảo sát ngưỡng $A_{min}$ | Xác định đánh đổi giữa số ứng viên và escape rate |
 | **TN2** — So sánh 3 cấu hình: chỉ XOR · chỉ YOLO · **lai** | Chứng minh định lượng luận điểm §4.2 |
-| **TN3** — Khảo sát GSD (0,013 vs 0,039 mm/px) | Kiểm chứng thực nghiệm yêu cầu R1 |
+| **TN3** — Khảo sát GSD (0,0133 vs 0,0444 mm/px) | Kiểm chứng thực nghiệm yêu cầu R1 |
 | **TN4** — Đánh giá độ bền với biến thiên chiếu sáng | Kiểm chứng thiết kế chiếu sáng §5.3 |
 | **TN5** — Đo hiệu năng trên Pi 4 | Kiểm chứng R3, R4 |
 
@@ -439,6 +537,18 @@ bỏ ra để kiểm tra lại — nếu quá cao thì hệ thống sẽ bị b�
 | H4 | Ngưỡng phân đoạn HSV phụ thuộc loại phíp và đèn | Phải hiệu chỉnh lại khi đổi vật tư |
 | H5 | Tập dữ liệu tự xây dựng, quy mô hạn chế | Khả năng tổng quát hóa cần được đánh giá thận trọng |
 | H6 | Khuyết tật sinh có kiểm soát có thể **không hoàn toàn giống** khuyết tật tự nhiên | Cần bổ sung mẫu tự nhiên vào tập kiểm tra |
+| H7 | Hệ chỉ có **một camera**, dành riêng cho AOI | **Không giám sát được trạng thái máy**: không xác thực được thay dao, không kiểm tra được phôi trước gia công, không phát hiện vật lạ trong vùng làm việc |
+| H8 | Lấy nét và khẩu độ chỉnh tay | Đổi khoảng cách lắp hoặc đổi ống kính là **phải hiệu chuẩn lại** GSD và ma trận nội (§6.1) |
+
+> **H7 đáng lưu ý vì đồ án gốc đã có bằng chứng về rủi ro thay dao:** Bảng 4.2 của đồ án cho thấy
+> tỉ lệ nhả dao thành công dao động **0/5 đến 5/5** tùy bộ thông số, và các thông số đó đo ở 12 V nên
+> không còn đúng khi hệ chuyển sang 24 V. Máy hiện **không có cách nào biết** một lần thay dao đã
+> hỏng, nên sẽ chạy tiếp với trục chính rỗng hoặc dao lỏng.
+>
+> Hai hướng khắc phục, đều là hướng phát triển chứ không thuộc phạm vi hiện tại:
+> ① thêm một camera giá rẻ gắn **cố định** soi ổ dao — không tốn thời gian di chuyển;
+> ② cho chính camera AOI chạy tới ổ dao sau mỗi lần thay dao — không tốn thêm phần cứng nhưng
+> tốn thời gian di chuyển và làm phức tạp chuỗi ATC.
 
 > **H6 là mối đe dọa nghiêm túc đến giá trị hiệu lực (validity)** của kết quả, cần nêu thẳng trong
 > báo cáo: mô hình huấn luyện chủ yếu trên khuyết tật nhân tạo có thể học phải đặc trưng của cách
@@ -460,7 +570,7 @@ bỏ ra để kiểm tra lại — nếu quá cao thì hệ thống sẽ bị b�
 |---|---|---|
 | 1 | Bộ nhãn 8 lớp khuyết tật **đặc thù cho công nghệ phay cách ly** | Khác với bộ nhãn của tập dữ liệu công khai vốn dành cho công nghệ ăn mòn |
 | 2 | Kiến trúc lai: sinh ứng viên bằng tham chiếu Gerber + phân loại bằng YOLO | Giải quyết đồng thời độ bỏ sót, báo nhầm và chi phí tính toán |
-| 3 | Chụp ghép bằng **chính cơ cấu định vị của máy** | Đạt GSD 13 µm không cần quang học đắt tiền; đăng ký ảnh gần như miễn phí |
+| 3 | Chụp ghép bằng **chính cơ cấu định vị của máy** | Đạt GSD 13,3 µm không cần quang học đắt tiền; đăng ký ảnh gần như miễn phí |
 | 4 | Phương pháp **sinh khuyết tật có kiểm soát** để xây tập dữ liệu | Nhãn ground truth có sẵn, loại bỏ sai lệch chủ quan khi gán nhãn |
 
 ---

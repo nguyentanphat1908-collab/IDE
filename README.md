@@ -29,6 +29,8 @@ Phần cơ khí giữ nguyên hoàn toàn từ đồ án gốc; lớp điều kh
 | [`docs/chuc-nang-plc.md`](docs/chuc-nang-plc.md) | Đặc tả PLC: phân bổ I/O, khối hàm, Data Block, an toàn, đấu dây |
 | [`docs/gerber-sang-nc.md`](docs/gerber-sang-nc.md) | Sinh đường chạy dao: Gerber + Excellon → `.nc` |
 | [`docs/kiem-tra-quang-hoc.md`](docs/kiem-tra-quang-hoc.md) | Kiểm tra quang học tự động (AOI) bằng thị giác máy và YOLO |
+| [`docs/luu-do-giai-thuat.md`](docs/luu-do-giai-thuat.md) | Tập hợp lưu đồ giải thuật toàn hệ thống |
+| [`docs/dinh-vi-va-toi-uu-phoi.md`](docs/dinh-vi-va-toi-uu-phoi.md) | Định vị phôi và tối ưu tận dụng phôi thừa |
 | [`docs/so-sanh-stm32-vs-s7.md`](docs/so-sanh-stm32-vs-s7.md) | Đối chiếu bản gốc ↔ bản mới: cái mất, cái được |
 
 ## Nguồn gốc
@@ -47,8 +49,10 @@ Tài liệu đánh dấu rõ ba loại thông tin, **không được lẫn lộn
 | `[DS]` | Thông số datasheet nhà sản xuất |
 | `[ĐX]` | **Đề xuất thiết kế mới — ước lượng, chưa kiểm chứng, phải đo lại** |
 
-Ba điểm bắt buộc kiểm chứng trước khi vận hành:
+Bốn điểm bắt buộc kiểm chứng trước khi vận hành:
 
 1. **Thông số PWM siết/nhả dao đo ở 12 V nên không còn đúng ở 24 V** — phải thực nghiệm lại
 2. **Điện trở hạn dòng 2 kΩ** cho ngõ vào driver ở mức 24 V — thiếu là cháy opto ngay lần cấp điện đầu
 3. **Thời gian suy luận YOLO trên Pi 4** mới là ước lượng — phải đo thực tế để xác nhận chu kỳ kiểm tra
+4. **Đo khoảng hở từ dầm ngang xuống mặt bàn trước khi mua ống kính** — tiêu cự 12 mm cần 115 mm;
+   hẹp hơn dùng 8 mm (77 mm), rộng hơn dùng 16 mm (153 mm)

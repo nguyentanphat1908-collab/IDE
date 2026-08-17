@@ -222,7 +222,7 @@ Sau khi gia công xong, PLC chuyển sang trạng thái `INSPECTING`. **PLC khô
 > **Bắt buộc tắt spindle trước khi chụp.** Ngoài rung động, spindle quay còn gây nhiễu điện lên
 > đường tín hiệu — cùng lý do đã phải có relay ngắt tín hiệu leveling ở `Q1.1`.
 
-Độ chính xác định vị của máy (2,5 µm) nhỏ hơn GSD của camera (13 µm) một bậc, nên tọa độ máy tại mỗi
+Độ chính xác định vị của máy (2,5 µm) nhỏ hơn GSD của camera (13,3 µm) một bậc, nên tọa độ máy tại mỗi
 lần chụp **chính là thông tin đăng ký ảnh** — xem `kiem-tra-quang-hoc.md` §5.2.
 
 ---

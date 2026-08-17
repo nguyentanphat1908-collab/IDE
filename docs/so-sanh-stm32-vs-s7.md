@@ -132,7 +132,7 @@ Bản mới bổ sung một bài toán nghiên cứu độc lập và có tính 
 |---|---|
 | Bộ nhãn 8 lớp khuyết tật **đặc thù công nghệ phay** | Tập dữ liệu công khai (DeepPCB, HRIPCB) đều dành cho công nghệ **ăn mòn**, cơ chế sinh khuyết tật khác hẳn |
 | Kiến trúc lai: tham chiếu Gerber sinh ứng viên + YOLO phân loại | Giải quyết đồng thời độ bỏ sót, báo nhầm và ràng buộc tính toán trên thiết bị biên |
-| Chụp ghép bằng **chính cơ cấu định vị của máy** | Đạt GSD 13 µm không cần quang học đắt tiền; đăng ký ảnh gần như miễn phí nhờ độ chính xác máy 2,5 µm |
+| Chụp ghép bằng **chính cơ cấu định vị của máy** | Đạt GSD 13,3 µm không cần quang học đắt tiền; đăng ký ảnh gần như miễn phí nhờ độ chính xác máy 2,5 µm |
 | **Sinh khuyết tật có kiểm soát** để xây tập dữ liệu | Nhãn ground truth có sẵn theo tọa độ, loại bỏ sai lệch chủ quan khi gán nhãn thủ công |
 
 > **Về mặt cân đối cho một đồ án:** phần giải thuật CNC tự viết bị mất đi, nhưng phần thị giác máy
