@@ -405,48 +405,48 @@ Hai thông số đặt bằng **DIP switch trên driver**, không phải bằng 
 
 ```mermaid
 flowchart LR
-    subgraph NGUON["KHỐI NGUỒN"]
+    subgraph NGUON["KHỐI NGUỒN"]:::proc
         direction TB
-        AC["220 VAC"] --> CB["Aptomat<br/>+ cầu chì"]
-        CB --> PS1["Nguồn xung<br/>24 V / 15 A<br/><b>động lực</b>"]
-        CB --> PS2["PM1207<br/>24 V / 2,5 A<br/><b>điều khiển</b>"]
-        PS1 --> DCDC["DC-DC<br/>24 V → 5 V / 5 A"]
+        AC["220 VAC"]:::proc --> CB["Aptomat<br/>+ cầu chì"]:::proc
+        CB --> PS1["Nguồn xung<br/>24 V / 15 A<br/><b>động lực</b>"]:::proc
+        CB --> PS2["PM1207<br/>24 V / 2,5 A<br/><b>điều khiển</b>"]:::proc
+        PS1 --> DCDC["DC-DC<br/>24 V → 5 V / 5 A"]:::proc
     end
 
-    subgraph MASTER["RASPBERRY PI 4 — MASTER"]
+    subgraph MASTER["RASPBERRY PI 4 — MASTER"]:::proc
         direction TB
-        PI["Pi 4 (4 GB)"]
+        PI["Pi 4 (4 GB)"]:::proc
         USB[("USB<br/>file Gerber")] -->|USB 3.0| PI
-        PI <-->|"CSI"| CAM["HQ Camera IMX477<br/>+ ống kính C-mount 12 mm"]
-        PI <-->|"SPI + GPIO"| LCD["LCD cảm ứng 3.5 inch"]
-        LED["Đèn vòng LED<br/>khuếch tán"] -.->|chiếu sáng| CAM
+        PI <-->|"CSI"| CAM["HQ Camera IMX477<br/>+ ống kính C-mount 12 mm"]:::proc
+        PI <-->|"SPI + GPIO"| LCD["LCD cảm ứng 3.5 inch"]:::proc
+        LED["Đèn vòng LED<br/>khuếch tán"]:::proc -.->|chiếu sáng| CAM
     end
 
-    subgraph SLAVE["S7-1200 1214C DC/DC/DC — SLAVE"]
+    subgraph SLAVE["S7-1200 1214C DC/DC/DC — SLAVE"]:::proc
         direction TB
-        PLC["CPU 1214C"]
-        SM["SM 1223<br/>DI8/DQ8"]
+        PLC["CPU 1214C"]:::proc
+        SM["SM 1223<br/>DI8/DQ8"]:::proc
         PLC --- SM
     end
 
-    subgraph CONGSUAT["KHỐI CÔNG SUẤT"]
+    subgraph CONGSUAT["KHỐI CÔNG SUẤT"]:::proc
         direction TB
-        DRX["DM542 — X"] --> MX["NEMA17 X"]
-        DRY["DM542 — Y"] --> MY["NEMA17 Y"]
-        DRZ["DM542 — Z"] --> MZ["NEMA17 Z"]
-        OPTO["Board opto<br/>24 V → 5 V"] --> BTS["BTS7960"]
-        BTS --> SPIN["RS775<br/>trục chính"]
+        DRX["DM542 — X"]:::proc --> MX["NEMA17 X"]:::proc
+        DRY["DM542 — Y"]:::proc --> MY["NEMA17 Y"]:::proc
+        DRZ["DM542 — Z"]:::proc --> MZ["NEMA17 Z"]:::proc
+        OPTO["Board opto<br/>24 V → 5 V"]:::proc --> BTS["BTS7960"]:::proc
+        BTS --> SPIN["RS775<br/>trục chính"]:::proc
     end
 
-    subgraph CAMBIEN["CẢM BIẾN & NÚT"]
+    subgraph CAMBIEN["CẢM BIẾN & NÚT"]:::proc
         direction TB
-        HOME["Công tắc gốc<br/>X / Y / Z"]
-        LIMIT["Hard limit<br/>X / Y / Z"]
-        PROBE["Cảm biến<br/>leveling"]
-        BTN["Start / Stop / Reset"]
+        HOME["Công tắc gốc<br/>X / Y / Z"]:::proc
+        LIMIT["Hard limit<br/>X / Y / Z"]:::proc
+        PROBE["Cảm biến<br/>leveling"]:::proc
+        BTN["Start / Stop / Reset"]:::proc
     end
 
-    ESTOP["E-STOP<br/>+ relay an toàn"]
+    ESTOP["E-STOP<br/>+ relay an toàn"]:::proc
 
     PS2 --> PLC
     DCDC --> PI
@@ -461,6 +461,12 @@ flowchart LR
     PLC -->|"Q0.6 PWM<br/>Q1.0 đảo chiều"| OPTO
     CAMBIEN -->|"I0.0–I0.7<br/>I1.0–I1.5"| PLC
     ESTOP -.->|"I0.7 tiếp điểm phụ<br/>chỉ để biết trạng thái"| PLC
+    classDef term fill:#BDD7EE,stroke:#2E75B6,stroke-width:2px,color:#000
+    classDef proc fill:#DEEBF7,stroke:#5B9BD5,stroke-width:2px,color:#000
+    classDef io   fill:#DEEBF7,stroke:#5B9BD5,stroke-width:2px,color:#000
+    classDef dec  fill:#9DC3E6,stroke:#2E75B6,stroke-width:2px,color:#000
+    classDef conn fill:#9DC3E6,stroke:#2E75B6,stroke-width:2px,color:#000
+    linkStyle default stroke:#5B9BD5,stroke-width:2px
 ```
 
 Hai đường nguồn **tách biệt** là chi tiết quan trọng: PM1207 cấp riêng cho PLC, nguồn 15 A cấp cho

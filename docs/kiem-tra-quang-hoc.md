@@ -147,19 +147,25 @@ và sự kết hợp cho **tính khả thi tính toán**.
 
 ```mermaid
 flowchart TD
-    A([Gia công xong]) --> B[Di chuyển tới vị trí chụp thứ k]
-    B --> C[Chụp ảnh màu<br/>chiếu sáng khuếch tán]
-    C --> D{Đã đủ<br/>16 tile?}
-    D -- chưa --> B
-    D -- rồi --> E[Hiệu chuẩn méo ống kính<br/>và ghép ảnh theo tọa độ máy]
-    E --> F[Phân đoạn đồng / nền<br/>không gian màu HSV]
-    G[(File Gerber)] --> H[Dựng mặt nạ đồng lý tưởng<br/>cùng GSD]
-    F --> I[Đăng ký ảnh với thiết kế<br/>qua điểm chuẩn fiducial]
+    A([Gia công xong]):::term --> B[Di chuyển tới vị trí chụp thứ k]:::proc
+    B --> C[Chụp ảnh màu<br/>chiếu sáng khuếch tán]:::proc
+    C --> D{Đã đủ<br/>16 tile?}:::dec
+    D -- Sai --> B
+    D -- Đúng --> E[Hiệu chuẩn méo ống kính<br/>và ghép ảnh theo tọa độ máy]:::proc
+    E --> F[Phân đoạn đồng / nền<br/>không gian màu HSV]:::proc
+    G[(File Gerber)] --> H[Dựng mặt nạ đồng lý tưởng<br/>cùng GSD]:::proc
+    F --> I[Đăng ký ảnh với thiết kế<br/>qua điểm chuẩn fiducial]:::proc
     H --> I
-    I --> J[Phép XOR<br/>→ sinh vùng ứng viên]
-    J --> K[YOLO phân loại<br/>chỉ trên vùng ứng viên]
-    K --> L[Hợp nhất kết quả, NMS<br/>quy đổi về tọa độ máy mm]
-    L --> M([Hiển thị bản đồ khuyết tật<br/>lên màn hình])
+    I --> J[Phép XOR<br/>→ sinh vùng ứng viên]:::proc
+    J --> K[YOLO phân loại<br/>chỉ trên vùng ứng viên]:::proc
+    K --> L[Hợp nhất kết quả, NMS<br/>quy đổi về tọa độ máy mm]:::proc
+    L --> M([Hiển thị bản đồ khuyết tật<br/>lên màn hình]):::term
+    classDef term fill:#BDD7EE,stroke:#2E75B6,stroke-width:2px,color:#000
+    classDef proc fill:#DEEBF7,stroke:#5B9BD5,stroke-width:2px,color:#000
+    classDef io   fill:#DEEBF7,stroke:#5B9BD5,stroke-width:2px,color:#000
+    classDef dec  fill:#9DC3E6,stroke:#2E75B6,stroke-width:2px,color:#000
+    classDef conn fill:#9DC3E6,stroke:#2E75B6,stroke-width:2px,color:#000
+    linkStyle default stroke:#5B9BD5,stroke-width:2px
 ```
 
 ---

@@ -69,17 +69,23 @@ Người dùng nạp qua **USB** vào Raspberry Pi 4, đúng như lưu đồ.
 
 ```mermaid
 flowchart TD
-    A([Người dùng cung cấp<br/>file Gerber]) -->|USB| B[Raspberry Pi 4]
+    A([Người dùng cung cấp<br/>file Gerber]):::term -->|USB| B[Raspberry Pi 4]:::proc
     B --> C[(Lưu trữ file Gerber)]
-    C --> D[Chuyển đổi Gerber + Excellon<br/>thành file .nc]
+    C --> D[Chuyển đổi Gerber + Excellon<br/>thành file .nc]:::proc
     D --> E[(Lưu trữ file .nc)]
-    E --> F[Phân tích cú pháp .nc<br/>tách tọa độ X, Y, Z]
-    F --> G[Tuyến tính hóa cung tròn G02/G03]
-    G --> H[Bù cao độ theo leveling map<br/>và chia nhỏ đoạn dài]
-    H --> I[Truyền xuống DataBlock của PLC<br/>qua thư viện Snap7]
-    I --> J[PLC phát xung PTO]
-    J --> K[Driver bước]
-    K --> L([Động cơ bước X, Y, Z])
+    E --> F[Phân tích cú pháp .nc<br/>tách tọa độ X, Y, Z]:::proc
+    F --> G[Tuyến tính hóa cung tròn G02/G03]:::proc
+    G --> H[Bù cao độ theo leveling map<br/>và chia nhỏ đoạn dài]:::proc
+    H --> I[Truyền xuống DataBlock của PLC<br/>qua thư viện Snap7]:::proc
+    I --> J[PLC phát xung PTO]:::proc
+    J --> K[Driver bước]:::proc
+    K --> L([Động cơ bước X, Y, Z]):::term
+    classDef term fill:#BDD7EE,stroke:#2E75B6,stroke-width:2px,color:#000
+    classDef proc fill:#DEEBF7,stroke:#5B9BD5,stroke-width:2px,color:#000
+    classDef io   fill:#DEEBF7,stroke:#5B9BD5,stroke-width:2px,color:#000
+    classDef dec  fill:#9DC3E6,stroke:#2E75B6,stroke-width:2px,color:#000
+    classDef conn fill:#9DC3E6,stroke:#2E75B6,stroke-width:2px,color:#000
+    linkStyle default stroke:#5B9BD5,stroke-width:2px
 ```
 
 ---

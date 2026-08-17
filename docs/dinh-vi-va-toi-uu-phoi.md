@@ -288,32 +288,38 @@ thẳng, **±9,8 mdeg** nếu tính cả ngân sách.
 
 ```mermaid
 flowchart TD
-    A([Đơn hàng mới]) --> B["Đặt phôi vị trí bất kỳ"]
-    B --> C["Quét 16 tile, binning 4×"]
-    C --> D{"Tìm thấy phôi?"}
-    D -- không --> E[/"Báo: không thấy phôi<br/>kiểm tra chiếu sáng và tấm lót"/]
-    E --> Z([Dừng])
-    D -- có --> F["Phân đoạn 3 lớp<br/>đóng hình thái gộp vùng đã dùng"]
-    F --> G["Đo tinh biên, khớp minAreaRect<br/>→ W, H, theta, gốc phôi"]
-    G --> H{"Phần dư khớp<br/>vượt ngưỡng?"}
-    H -- có --> I[/"Báo: phôi cong vênh<br/>hoặc không vuông"/]
+    A([Đơn hàng mới]):::term --> B["Đặt phôi vị trí bất kỳ"]:::proc
+    B --> C["Quét 16 tile, binning 4×"]:::proc
+    C --> D{"Tìm thấy phôi?"}:::dec
+    D -- Sai --> E[/"Báo: không thấy phôi<br/>kiểm tra chiếu sáng và tấm lót"/]
+    E --> Z([Dừng]):::term
+    D -- Đúng --> F["Phân đoạn 3 lớp<br/>đóng hình thái gộp vùng đã dùng"]:::proc
+    F --> G["Đo tinh biên, khớp minAreaRect<br/>→ W, H, theta, gốc phôi"]:::proc
+    G --> H{"Phần dư khớp<br/>vượt ngưỡng?"}:::dec
+    H -- Đúng --> I[/"Báo: phôi cong vênh<br/>hoặc không vuông"/]
     I --> Z
-    H -- không --> J{"theta vượt<br/>giới hạn hành trình?"}
-    J -- có --> K[/"Báo: đặt lại phôi thẳng hơn"/]
+    H -- Sai --> J{"theta vượt<br/>giới hạn hành trình?"}:::dec
+    J -- Đúng --> K[/"Báo: đặt lại phôi thẳng hơn"/]:::io
     K --> Z
-    J -- không --> L["Dựng bản đồ chiếm dụng<br/>lưới 1 mm, hệ tọa độ phôi"]
-    L --> M["Duyệt điểm góc lõm × 2 hướng xoay"]
-    M --> N["Loại vị trí sinh vách mỏng<br/>theo quy tắc (1)"]
-    N --> O{"Còn vị trí nào?"}
-    O -- không --> P[/"Báo: phôi không đủ chỗ<br/>gợi ý dùng phôi khác"/]
+    J -- Sai --> L["Dựng bản đồ chiếm dụng<br/>lưới 1 mm, hệ tọa độ phôi"]:::proc
+    L --> M["Duyệt điểm góc lõm × 2 hướng xoay"]:::proc
+    M --> N["Loại vị trí sinh vách mỏng<br/>theo quy tắc (1)"]:::proc
+    N --> O{"Còn vị trí nào?"}:::dec
+    O -- Sai --> P[/"Báo: phôi không đủ chỗ<br/>gợi ý dùng phôi khác"/]
     P --> Z
-    O -- có --> Q["Chấm điểm: diện tích mảnh<br/>tự do lớn nhất còn lại"]
-    Q --> R["Chọn điểm cao nhất"]
+    O -- Đúng --> Q["Chấm điểm: diện tích mảnh<br/>tự do lớn nhất còn lại"]:::proc
+    Q --> R["Chọn điểm cao nhất"]:::proc
     R --> S[/"Mô phỏng vị trí đặt<br/>người dùng xác nhận"/]
-    S --> T["Áp phép quay theta + tịnh tiến<br/>cho toàn bộ tọa độ .nc"]
-    T --> U["Gia công"]
-    U --> V(["Phôi thừa sẵn sàng<br/>cho lần sau"])
+    S --> T["Áp phép quay theta + tịnh tiến<br/>cho toàn bộ tọa độ .nc"]:::proc
+    T --> U["Gia công"]:::proc
+    U --> V(["Phôi thừa sẵn sàng<br/>cho lần sau"]):::term
     V -.->|"lần chạy kế tiếp"| B
+    classDef term fill:#BDD7EE,stroke:#2E75B6,stroke-width:2px,color:#000
+    classDef proc fill:#DEEBF7,stroke:#5B9BD5,stroke-width:2px,color:#000
+    classDef io   fill:#DEEBF7,stroke:#5B9BD5,stroke-width:2px,color:#000
+    classDef dec  fill:#9DC3E6,stroke:#2E75B6,stroke-width:2px,color:#000
+    classDef conn fill:#9DC3E6,stroke:#2E75B6,stroke-width:2px,color:#000
+    linkStyle default stroke:#5B9BD5,stroke-width:2px
 ```
 
 Điểm đáng chú ý: **không có bước nào cập nhật sổ sách**. Phôi thừa tự mang thông tin về trạng thái
