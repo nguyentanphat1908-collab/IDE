@@ -273,7 +273,7 @@ flowchart TD
     linkStyle default stroke:#5B9BD5,stroke-width:2px
 ```
 
-> Bước **giải phóng ảnh ngay sau mỗi tile** là bắt buộc: 16 tile là 0,59 GB dữ liệu thô, giữ hết
+> Bước **giải phóng ảnh ngay sau mỗi tile** là bắt buộc: 16 tile là 0,39 GB dữ liệu thô, giữ hết
 > trong RAM là tràn.
 
 ## 9. Định vị phôi và tối ưu vị trí đặt

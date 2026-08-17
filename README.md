@@ -55,5 +55,5 @@ Bốn điểm bắt buộc kiểm chứng trước khi vận hành:
 1. **Thông số PWM siết/nhả dao đo ở 12 V nên không còn đúng ở 24 V** — phải thực nghiệm lại
 2. **Điện trở hạn dòng 2 kΩ** cho ngõ vào driver ở mức 24 V — thiếu là cháy opto ngay lần cấp điện đầu
 3. **Thời gian suy luận YOLO trên Pi 4** mới là ước lượng — phải đo thực tế để xác nhận chu kỳ kiểm tra
-4. **Đo khoảng hở từ dầm ngang xuống mặt bàn trước khi mua ống kính** — tiêu cự 12 mm cần 115 mm;
-   hẹp hơn dùng 8 mm (77 mm), rộng hơn dùng 16 mm (153 mm)
+4. **Đo khoảng hở từ dầm ngang xuống mặt bàn trước khi mua ống kính** — tiêu cự 8 mm cần 123 mm;
+   hẹp hơn dùng 6 mm (92 mm) hoặc 4 mm (62 mm), rộng hơn dùng 12 mm (185 mm)
