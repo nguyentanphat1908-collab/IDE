@@ -57,9 +57,9 @@ Dùng lại mã chụp ghép của AOI nhưng bật **binning 4×**:
 
 | | AOI | **Quét tìm phôi** |
 |---|---|---|
-| GSD | 13,3 µm/px | **53,2 µm/px** |
-| Ảnh mỗi tile | 12,3 MP | **0,8 MP** — nhẹ hơn 16 lần |
-| Sai số biên phôi | — | **±0,16 mm** (≈3 px) |
+| GSD | 16,1 µm/px | **64,4 µm/px** |
+| Ảnh mỗi tile | 8,1 MP | **0,5 MP** — nhẹ hơn 16 lần |
+| Sai số biên phôi | — | **±0,19 mm** (≈3 px) |
 
 Đủ chính xác để tìm biên phôi thô, mà nhanh hơn hẳn.
 
@@ -73,7 +73,7 @@ Ghép bản đồ thô → ngưỡng Otsu → contour ngoài lớn nhất → bi
 Chụp lại ở **độ phân giải đầy đủ** tại các cạnh, rồi:
 
 1. **Biến đổi Hough** tìm các đoạn thẳng biên
-2. Giao hai đường thẳng → tọa độ góc, độ chính xác **±6,7 µm**
+2. Giao hai đường thẳng → tọa độ góc, độ chính xác **±8,1 µm**
 3. Khớp bình phương tối thiểu → `W`, `H`, `θ`, gốc `(x0, y0)`
 
 > **Nguyên tắc: đo cạnh rồi suy ra góc, không đo góc trực tiếp.**
@@ -266,18 +266,18 @@ Với phôi cỡ lớn, **xoay quá ~25° là máy không với tới**. Phần 
 
 | Nguồn sai số | Giá trị |
 |---|---|
-| Khớp đường thẳng qua hàng nghìn điểm ảnh | ±6,7 µm |
+| Khớp đường thẳng qua hàng nghìn điểm ảnh | ±8,1 µm |
 | **Offset camera – trục chính** | **±20,0 µm** |
 | Méo ống kính còn dư sau hiệu chuẩn | ±5,0 µm |
 | Định vị máy | ±2,5 µm |
-| **Tổng (căn bậc hai tổng bình phương)** | **±21,8 µm** |
+| **Tổng (căn bậc hai tổng bình phương)** | **±22,3 µm** |
 
 Bằng khoảng **11%** bề rộng đường mạch nhỏ nhất (0,2 mm) — chấp nhận được.
 
-Sai số góc xoay, đo trên hai góc cách nhau 180 mm: **±3,0 mdeg** nếu chỉ tính sai số khớp đường
-thẳng, **±9,8 mdeg** nếu tính cả ngân sách.
+Sai số góc xoay, đo trên hai góc cách nhau 180 mm: **±3,6 mdeg** nếu chỉ tính sai số khớp đường
+thẳng, **±10,0 mdeg** nếu tính cả ngân sách.
 
-> **Khâu chiếm 20 trên 21,8 µm là offset camera – trục chính**, nên đây là chỗ đáng đầu tư hiệu
+> **Khâu chiếm 20 trên 22,3 µm là offset camera – trục chính**, nên đây là chỗ đáng đầu tư hiệu
 > chuẩn nhất. Quy trình: phay dấu chữ thập tại tọa độ đã biết → chụp → đo độ lệch tâm ảnh →
 > lặp ở 5–9 vị trí khác nhau rồi lấy trung bình.
 >

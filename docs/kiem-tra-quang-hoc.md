@@ -190,20 +190,26 @@ nhưng ở bài toán này lại là **tiêu chí quyết định**: khoảng c�
 
 | Cảm biến | Điểm ảnh | Ống kính | **Lấy nét gần nhất** | GSD tốt nhất đạt được | Khuyết tật 0,1 mm |
 |---|---|---|---|---|---|
-| Pi Camera Module 3 (IMX708) | 4608 × 2592 | **Gắn liền** | ~100 mm | 28,2 µm/px | 3,55 px ✗ |
+| Pi Camera Module 2 / 3 | 3280 × 2464 / 4608 × 2592 | **Gắn liền** | ~100 mm | 28,2 µm/px | 3,55 px ✗ |
 | Pi AI Camera (IMX500) | 4056 × 3040 | **Gắn liền** | ~100 mm | ~30 µm/px | ~3,3 px ✗ |
 | ESP32-CAM (OV2640) | 1600 × 1200 | Gắn liền | ~100 mm | 112 µm/px | 0,89 px ✗ |
-| **Pi HQ Camera (IMX477)** | **4056 × 3040** | **Rời, ngàm C/CS** | **Tùy ống kính** | **13,3 µm/px** | **7,5 px ✓** |
+| **IMX219 + ngàm M12** | **3280 × 2464** | **Rời, ngàm M12** | **Tùy ống kính** | **16,1 µm/px** | **6,2 px ✓** |
+| Pi HQ Camera (IMX477) + C/CS | 4056 × 3040 | Rời, ngàm C/CS | Tùy ống kính | 13,3 µm/px | 7,5 px ✓ |
 
-**Chỉ HQ Camera đạt yêu cầu R1**, và lý do là **ống kính rời**, không phải số điểm ảnh — IMX500 có
-cùng số điểm ảnh nhưng vẫn trượt. Phân tích đầy đủ ở §5.4.
+**Chỉ hai phương án ống kính rời đạt yêu cầu R1** — yếu tố quyết định là **ống kính tháo được**,
+không phải số điểm ảnh. Phân tích đầy đủ ở §5.4.
 
-Cấu hình chốt: **HQ Camera + ống kính C-mount 12 mm**, FOV 54 × 40,5 mm.
+Cấu hình chốt: **IMX219 + ống kính M12 8 mm**, FOV 52,9 × 39,8 mm.
+
+> **Vì sao chọn IMX219 dù ít điểm ảnh hơn IMX477:** cùng 16 tile, cùng 37 s, nhưng **ít dữ liệu
+> hơn 34%** (0,39 so với 0,59 GB) và **chiều sâu trường ảnh tốt gần gấp đôi** (1,98 so với 1,02 mm
+> ở f/2.0). Cảm biến nhỏ hơn cần độ phóng đại thấp hơn cho cùng trường nhìn — đây là chỗ cảm biến
+> nhỏ thắng cảm biến lớn. Chi phí cũng thấp hơn đáng kể.
 
 | Phương án | GSD | Số px phủ khuyết tật 0,1 mm | Kết luận |
 |---|---|---|---|
-| Chụp **một ảnh** phủ cả bo | 180/4056 = **0,0444 mm/px** | 2,25 px | **Không đạt R1** |
-| Chụp **ghép** (mosaic), FOV rộng 54 mm | 54/4056 = **0,0133 mm/px** | 7,5 px | **Đạt R1** |
+| Chụp **một ảnh** phủ cả bo | 180/3280 = **0,0549 mm/px** | 1,82 px | **Không đạt R1** |
+| Chụp **ghép** (mosaic), FOV rộng 52,9 mm | 52,9/3280 = **0,0161 mm/px** | 6,2 px | **Đạt R1** |
 
 ### 5.2 Phương pháp chụp ghép sử dụng chính chuyển động của máy
 
@@ -211,30 +217,29 @@ Cấu hình chốt: **HQ Camera + ống kính C-mount 12 mm**, FOV 54 × 40,5 mm
 giải 2,5 µm**. Thay vì dùng ống kính telecentric độ phân giải cao (đắt), ta gắn camera lên cụm trục
 chính và **dùng chính chuyển động của máy để quét ảnh theo lưới**.
 
-Với FOV 54 × 40,5 mm và độ chồng lấn 15%:
+Với FOV 52,9 × 39,8 mm và độ chồng lấn 15%:
 
-$$n_{cols} = \left\lceil \frac{180}{54 \times 0{,}85} \right\rceil = 4, \qquad
-n_{rows} = \left\lceil \frac{130}{40{,}5 \times 0{,}85} \right\rceil = 4 \tag{3}$$
+$$n_{cols} = \left\lceil \frac{180}{52{,}9 \times 0{,}85} \right\rceil = 4, \qquad
+n_{rows} = \left\lceil \frac{130}{39{,}8 \times 0{,}85} \right\rceil = 4 \tag{3}$$
 
-→ **16 tile**, tổng 197 MP, dữ liệu thô ~0,59 GB.
+→ **16 tile**, tổng 129 MP, dữ liệu thô ~0,39 GB.
 
 | Chỉ tiêu | Giá trị |
 |---|---|
 | Thời gian chụp | 16 × (di chuyển 1,5 s + ổn định 0,5 s + chụp 0,3 s) ≈ **37 s** |
-| Bộ nhớ | **Xử lý tuần tự từng tile**, không giữ toàn bộ 0,59 GB trong RAM |
+| Bộ nhớ | **Xử lý tuần tự từng tile**, không giữ toàn bộ 0,39 GB trong RAM |
 
 > **Lợi ích kép của phương pháp này:** ngoài độ phân giải, tọa độ máy tại mỗi lần chụp **chính là
-> thông tin đăng ký ảnh**. Sai số định vị của máy (2,5 µm) nhỏ hơn GSD (13,3 µm) một bậc, nên phép
+> thông tin đăng ký ảnh**. Sai số định vị của máy (2,5 µm) nhỏ hơn GSD (16,1 µm) một bậc, nên phép
 > ghép ảnh gần như không sinh sai số — điều mà ghép ảnh bằng đặc trưng (feature matching) thông
 > thường không đạt được.
 
-> **Ràng buộc bộ nhớ.** Giữ cả 16 tile trong RAM là 0,59 GB dữ liệu thô, chưa kể bản trung gian.
+> **Ràng buộc bộ nhớ.** Giữ cả 16 tile trong RAM là 0,39 GB dữ liệu thô, chưa kể bản trung gian.
 > Bắt buộc xử lý **streaming từng tile**: chụp → phân đoạn → so sánh → lưu vùng ứng viên → giải
 > phóng. Đây là lý do Raspberry Pi 4 (4 GB) khả thi còn Pi Zero 2W (512 MB) thì không.
 
-> **Tỉ lệ khung hình ảnh hưởng tới số tile.** IMX477 tỉ lệ 4:3 nên phủ 40,5 mm chiều dọc, trong khi
-> một cảm biến 16:9 cùng độ phân giải ngang chỉ phủ ~30 mm — mất thêm một hàng tile. Đây là lý do
-> 16 tile thay vì 20 dù GSD gần như nhau.
+> **Tỉ lệ khung hình ảnh hưởng tới số tile.** IMX219 tỉ lệ 4:3 nên phủ 39,8 mm chiều dọc, trong khi
+> một cảm biến 16:9 cùng độ phân giải ngang chỉ phủ ~30 mm — mất thêm một hàng tile.
 
 ### 5.3 Chiếu sáng
 
@@ -269,7 +274,7 @@ $$\text{FOV} = 2\,d\,\tan\frac{\theta}{2} \tag{4}$$
 trong đó $d$ là khoảng cách tới vật, $\theta$ là góc nhìn ngang. Muốn FOV nhỏ (để GSD nhỏ) thì phải
 đưa camera lại **thật gần**. Nhưng ống kính gắn liền có giới hạn lấy nét gần nhất.
 
-Với Camera Module 3 ($\theta \approx 66°$, lấy nét gần nhất ~100 mm):
+Với ống kính gắn liền của Pi Camera Module 2 / 3 ($\theta \approx 62$–$66°$, lấy nét gần nhất ~100 mm):
 
 | Khoảng cách | FOV rộng | GSD | Khuyết tật 0,1 mm |
 |---|---|---|---|
@@ -277,29 +282,34 @@ Với Camera Module 3 ($\theta \approx 66°$, lấy nét gần nhất ~100 mm):
 | 150 mm | 195 mm | 42,3 µm/px | 2,37 px ✗ |
 | 200 mm | 260 mm | 56,4 µm/px | 1,77 px ✗ |
 
-Để đạt FOV 54 mm cần đặt camera cách bo:
+Để đạt FOV 52,9 mm cần đặt camera cách bo:
 
-$$d = \frac{54}{2\tan(33°)} = 42 \text{ mm} \tag{5}$$
+$$d = \frac{52{,}9}{2\tan(31°)} = 44 \text{ mm} \tag{5}$$
 
 **Gần hơn khả năng lấy nét.** Ống kính không tháo được nên không có cách khắc phục —
-Camera Module 3 và AI Camera (IMX500) đều bị loại vì lý do này, bất kể số điểm ảnh.
+**Pi Camera Module 2, Module 3 và AI Camera (IMX500) đều bị loại vì lý do này**, bất kể số điểm ảnh.
+
+> **Đây là ràng buộc quan trọng nhất khi mua hàng.** Cùng cảm biến IMX219 nhưng bản Pi Camera
+> Module 2 (ống kính gắn liền) **không dùng được**, còn bản có **ngàm M12** (Arducam và tương
+> đương) thì dùng tốt. Phải kiểm tra kỹ mô tả sản phẩm trước khi đặt.
 
 #### 5.4.2 Chọn tiêu cự cho ống kính rời
 
-Ngàm C/CS của HQ Camera cho phép chọn tiêu cự theo khoảng cách lắp đặt thực tế. Độ phóng đại:
+Ngàm M12 cho phép chọn tiêu cự theo khoảng cách lắp đặt thực tế. Độ phóng đại:
 
-$$m = \frac{w_{sensor}}{\text{FOV}} = \frac{6{,}287}{54} = 0{,}116 \tag{6}$$
+$$m = \frac{w_{sensor}}{\text{FOV}} = \frac{3{,}68}{52{,}9} = 0{,}0695 \tag{6}$$
 
 Khoảng cách làm việc theo công thức thấu kính mỏng:
 
-$$d = f\,\frac{1+m}{m} \approx 9{,}59\,f \tag{7}$$
+$$d = f\,\frac{1+m}{m} \approx 15{,}4\,f \tag{7}$$
 
-| Tiêu cự | Khoảng cách camera–bo | Đánh giá |
+| Tiêu cự M12 | Khoảng cách camera–bo | Đánh giá |
 |---|---|---|
-| 8 mm | 77 mm | Khi khoảng hở hẹp |
-| **12 mm** | **115 mm** | **Chọn** |
-| 16 mm | 153 mm | Khi khoảng hở rộng |
-| 25 mm | 240 mm | Vượt chiều cao máy 300 mm — loại |
+| 4 mm | 62 mm | Khi khoảng hở rất hẹp |
+| 6 mm | 92 mm | Khi khoảng hở hẹp |
+| **8 mm** | **123 mm** | **Chọn** |
+| 12 mm | 185 mm | Khi khoảng hở rộng |
+| 16 mm | 246 mm | Vượt chiều cao máy 300 mm — loại |
 
 > **Phải đo trước khi mua ống kính:** khoảng hở từ dầm ngang xuống mặt bàn máy. Công thức (7) là
 > gần đúng thấu kính mỏng; ống kính thực có vị trí mặt phẳng chính khác đôi chút, nên **cần chừa
@@ -312,16 +322,21 @@ trường ảnh nhỏ hơn độ cong vênh, một phần bo sẽ mất nét và
 
 $$\text{DOF} \approx \frac{2Nc\,(1+m)}{m^2} \tag{8}$$
 
-với $N$ là trị số khẩu độ, $c$ là đường kính vòng tròn mờ cho phép (lấy ~2 điểm ảnh = 3,1 µm).
+với $N$ là trị số khẩu độ, $c$ là đường kính vòng tròn mờ cho phép (lấy ~2 điểm ảnh = 2,24 µm).
 
 | Khẩu độ | DOF |
 |---|---|
-| f/2.8 | 1,43 mm |
-| f/5.6 | 2,86 mm |
-| **f/8** | **4,09 mm** |
-| f/11 | 5,62 mm |
+| f/2.0 | 1,98 mm |
+| f/2.8 | 2,78 mm |
+| **f/5.6** | **5,55 mm** |
+| f/8 | 7,93 mm |
 
-Chọn **f/8**: 4,09 mm thừa sức bao dung sai cong vênh, mà chưa tới ngưỡng nhiễu xạ đáng kể.
+> **Cảm biến nhỏ cho DOF tốt hơn ở cùng khẩu độ.** IMX219 (1/4") chỉ cần độ phóng đại 0,0695 cho
+> FOV 52,9 mm, trong khi IMX477 (1/2,3") cần 0,116 — mà DOF tỉ lệ nghịch với $m^2$. Kết quả:
+> ở f/2.0 IMX219 cho **1,98 mm** còn IMX477 chỉ **1,02 mm**. Đây là chỗ cảm biến nhỏ thắng.
+
+Nhiều ống kính M12 giá rẻ có **khẩu cố định** (thường f/2.0–f/2.8); ở mức đó DOF ~2–2,8 mm vẫn đủ
+bao dung sai cong vênh. Nếu chọn được bản có vòng khẩu thì đặt **f/5.6**.
 
 #### 5.4.4 Lấy nét tay và khẩu độ tay là *yêu cầu*, không phải thiệt thòi
 
@@ -330,7 +345,7 @@ Chọn **f/8**: 4,09 mm thừa sức bao dung sai cong vênh, mà chưa tới ng
 | Đặc điểm | Vì sao là ưu điểm ở bài toán này |
 |---|---|
 | **Lấy nét tay, cố định** | Lấy nét tự động sẽ **dò nét lại giữa các tile**. Mỗi lần đổi nét làm độ phóng đại thay đổi nhẹ (*focus breathing*) → **phá vỡ giả định GSD không đổi** mà phép ghép ảnh và đăng ký với mặt nạ Gerber (§6.2) dựa hoàn toàn vào. Khóa nét một lần là điều kiện cần |
-| **Khẩu độ chỉnh tay** | Cho phép chọn f/8 để có DOF 4 mm. Camera Module 3 cố định f/1.8 → DOF chỉ ~1,4 mm, không đủ biên cho bo cong vênh |
+| **Khẩu độ chỉnh tay** *(nếu ống kính có)* | Cho phép khép khẩu tăng DOF. Với IMX219 thì ngay cả khẩu cố định f/2.0 cũng đã cho DOF 1,98 mm — đủ dùng |
 
 Nói cách khác, hai "tính năng" của camera tiêu dùng — lấy nét tự động và khẩu độ lớn cố định — đều
 **phản tác dụng** trong đo lường thị giác máy.
@@ -523,7 +538,7 @@ bỏ ra để kiểm tra lại — nếu quá cao thì hệ thống sẽ bị b�
 |---|---|
 | **TN1** — Khảo sát ngưỡng $A_{min}$ | Xác định đánh đổi giữa số ứng viên và escape rate |
 | **TN2** — So sánh 3 cấu hình: chỉ XOR · chỉ YOLO · **lai** | Chứng minh định lượng luận điểm §4.2 |
-| **TN3** — Khảo sát GSD (0,0133 vs 0,0444 mm/px) | Kiểm chứng thực nghiệm yêu cầu R1 |
+| **TN3** — Khảo sát GSD (0,0161 vs 0,0549 mm/px) | Kiểm chứng thực nghiệm yêu cầu R1 |
 | **TN4** — Đánh giá độ bền với biến thiên chiếu sáng | Kiểm chứng thiết kế chiếu sáng §5.3 |
 | **TN5** — Đo hiệu năng trên Pi 4 | Kiểm chứng R3, R4 |
 
@@ -576,7 +591,7 @@ bỏ ra để kiểm tra lại — nếu quá cao thì hệ thống sẽ bị b�
 |---|---|---|
 | 1 | Bộ nhãn 8 lớp khuyết tật **đặc thù cho công nghệ phay cách ly** | Khác với bộ nhãn của tập dữ liệu công khai vốn dành cho công nghệ ăn mòn |
 | 2 | Kiến trúc lai: sinh ứng viên bằng tham chiếu Gerber + phân loại bằng YOLO | Giải quyết đồng thời độ bỏ sót, báo nhầm và chi phí tính toán |
-| 3 | Chụp ghép bằng **chính cơ cấu định vị của máy** | Đạt GSD 13,3 µm không cần quang học đắt tiền; đăng ký ảnh gần như miễn phí |
+| 3 | Chụp ghép bằng **chính cơ cấu định vị của máy** | Đạt GSD 16,1 µm không cần quang học đắt tiền; đăng ký ảnh gần như miễn phí |
 | 4 | Phương pháp **sinh khuyết tật có kiểm soát** để xây tập dữ liệu | Nhãn ground truth có sẵn, loại bỏ sai lệch chủ quan khi gán nhãn |
 
 ---

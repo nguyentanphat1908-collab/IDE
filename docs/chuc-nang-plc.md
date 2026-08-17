@@ -222,7 +222,7 @@ Sau khi gia công xong, PLC chuyển sang trạng thái `INSPECTING`. **PLC khô
 > **Bắt buộc tắt spindle trước khi chụp.** Ngoài rung động, spindle quay còn gây nhiễu điện lên
 > đường tín hiệu — cùng lý do đã phải có relay ngắt tín hiệu leveling ở `Q1.1`.
 
-Độ chính xác định vị của máy (2,5 µm) nhỏ hơn GSD của camera (13,3 µm) một bậc, nên tọa độ máy tại mỗi
+Độ chính xác định vị của máy (2,5 µm) nhỏ hơn GSD của camera (16,1 µm) một bậc, nên tọa độ máy tại mỗi
 lần chụp **chính là thông tin đăng ký ảnh** — xem `kiem-tra-quang-hoc.md` §5.2.
 
 ---
@@ -417,7 +417,7 @@ flowchart LR
         direction TB
         PI["Pi 4 (4 GB)"]:::proc
         USB[("USB<br/>file Gerber")] -->|USB 3.0| PI
-        PI <-->|"CSI"| CAM["HQ Camera IMX477<br/>+ ống kính C-mount 12 mm"]:::proc
+        PI <-->|"CSI"| CAM["Camera IMX219 ngàm M12<br/>+ ống kính M12 8 mm"]:::proc
         PI <-->|"SPI + GPIO"| LCD["LCD cảm ứng 3.5 inch"]:::proc
         LED["Đèn vòng LED<br/>khuếch tán"]:::proc -.->|chiếu sáng| CAM
     end
