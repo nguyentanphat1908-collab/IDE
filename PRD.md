@@ -1,248 +1,281 @@
-# PRD — Máy gia công mạch PCB tự động (bản PLC S7-1200)
+# PRD — Hệ thống gia công PCB tự động tích hợp AOI
 
-**Mã đề tài:** 22223DT130  
-**Trường:** ĐH Sư phạm Kỹ thuật TP.HCM — Khoa Cơ khí Chế tạo máy, Bộ môn Cơ điện tử  
-**GVHD:** ThS. Lê Thanh Tùng  
-**SVTH:** Trần Thái An · Trần Ngọc Đức · Nguyễn Văn Lưu  
-**Phiên bản thiết kế:** PLC S7-1200 (chuyển đổi từ STM32)
+## 1. Tổng quan
 
----
+Hệ thống được thiết kế để tự động hóa quá trình gia công PCB từ dữ liệu thiết kế đến kiểm tra chất lượng.
 
-## 1. Tổng quan sản phẩm
+Luồng chính:
 
-Máy gia công mạch in PCB tự động theo phương pháp **phay cách ly (isolation milling)**. Thay vì dùng hóa chất ăn mòn, máy dùng dao phay/khoan để bóc lớp đồng dọc theo biên dạng mạch, tạo đường dẫn điện không cần phòng tối hóa học.
-
-Phiên bản này giữ nguyên toàn bộ phần cơ khí từ đồ án gốc; lớp điều khiển được **thiết kế lại hoàn toàn** từ STM32 sang PLC Siemens S7-1200, bổ sung thêm mô-đun kiểm tra quang học tự động (AOI) sau gia công.
-
-### Kiến trúc hệ thống
-
+```text
+Gerber
+  ↓
+NC Processing
+  ↓
+Raspberry Pi 4
+  ↓
+S7-1200 PLC
+  ↓
+Motor & Motion System
+  ↓
+PCB Processing
+  ↓
+Camera / AOI Inspection
 ```
-Gerber ──USB──► Pi 4 ──► .nc ──► phân tích, bù z ──Ethernet──► PLC ──► driver ──► động cơ bước
-                                                                        │
-                       kết quả kiểm tra ◄── YOLO ◄── ảnh ◄── camera ◄────┘
-```
 
-- **Raspberry Pi 4 (Master):** đọc USB, chuyển Gerber → `.nc`, phân tích G-code, bù cao độ leveling map, chạy giao diện, điều phối AOI.
-- **S7-1200 (Slave):** điều khiển 3 trục bằng PTO, spindle bằng PWM, thay dao tự động, dò leveling, an toàn máy, đóng vai trò bàn định vị camera khi chụp ảnh kiểm tra.
+Raspberry Pi 4 đảm nhiệm xử lý cấp cao, giao tiếp, xử lý dữ liệu và AOI. S7-1200 PLC đảm nhiệm điều khiển thời gian thực, I/O và chuyển động.
 
 ---
 
 ## 2. Mục tiêu sản phẩm
 
-| # | Mục tiêu | Chỉ tiêu thành công |
-|---|---|---|
-| G1 | Gia công đúng thiết kế Gerber | Độ phân giải trục 2,5 µm/xung; sai số hành trình ≤ biên cơ khí |
-| G2 | Thay dao tự động tin cậy | ATC không trượt dao trong 100 chu kỳ liên tiếp sau hiệu chỉnh PWM ở 24 V |
-| G3 | Phát hiện khuyết tật sau gia công | Recall ≥ 0,95; phân loại được loại khuyết tật |
-| G4 | Thời gian kiểm tra chấp nhận được | ≤ 2 phút cho bo 180 × 130 mm |
-| G5 | Vận hành an toàn | E-stop cắt cứng nguồn động lực, độc lập PLC |
+| ID | Mục tiêu |
+|---|---|
+| G1 | Tự động hóa quá trình gia công PCB |
+| G2 | Chuyển dữ liệu Gerber thành dữ liệu điều khiển gia công |
+| G3 | Điều khiển chính xác các cơ cấu chuyển động |
+| G4 | Tích hợp AOI để kiểm tra chất lượng PCB |
+| G5 | Thay thế kiến trúc STM32 bằng hệ thống PLC công nghiệp |
 
 ---
 
-## 3. Người dùng và ngữ cảnh sử dụng
+## 3. Người dùng mục tiêu
 
-| Nhóm | Mô tả | Kỳ vọng chính |
-|---|---|---|
-| Sinh viên / kỹ thuật viên PCB | Tự làm bo mạch nguyên mẫu tại phòng lab | Vận hành đơn giản qua UI; không cần kiến thức CNC chuyên sâu |
-| Giảng viên / người giám sát | Giám sát quá trình gia công, kiểm tra kết quả | Báo cáo lỗi rõ ràng, bản đồ khuyết tật trực quan |
+Hệ thống hướng đến:
 
----
-
-## 4. Thông số máy
-
-| Hạng mục | Giá trị |
-|---|---|
-| Kích thước máy (D×R×C) | 560 × 490 × 300 mm |
-| Hành trình X × Y × Z | 220 × 235 × 50 mm |
-| Vùng gia công PCB | 180 × 130 × 2 mm |
-| Tốc độ di chuyển | 20 mm/s |
-| Tốc độ cắt | 8,33 mm/s |
-| Số ổ dao | 6 |
-| Điện áp hệ thống | 24 VDC |
-| Độ phân giải trục | 2,5 µm/xung (vi bước 1/16) |
-| Khối lượng | ~13 kg |
+- Kỹ sư điện tử và tự động hóa.
+- Phòng thí nghiệm và môi trường đào tạo.
+- Nhóm phát triển và thử nghiệm PCB.
+- Người vận hành cần gia công và kiểm tra PCB bán tự động hoặc tự động.
 
 ---
 
-## 5. Yêu cầu chức năng
+## 4. Yêu cầu chức năng
 
-### 5.1 Năm quy trình gia công
+### FR-01 — Nhập dữ liệu
 
-| # | Chức năng | Mô tả |
-|---|---|---|
-| F1 | Phay đường mạch | Phay tách đường đồng theo biên dạng đã offset bán kính dao |
-| F2 | Khoan lỗ | Khoan theo tọa độ và đường kính khai báo tường minh trong file Excellon |
-| F3 | Phay mặt | Bóc vùng đồng thừa |
-| F4 | Cắt viền mạch | Cắt rời bo theo đường viền ngoài |
-| F5 | Thay dao tự động (ATC) | 6 ổ dao cố định; spindle đảo chiều để siết/nhả dao |
+Hệ thống phải hỗ trợ tiếp nhận dữ liệu Gerber và các dữ liệu liên quan đến thiết kế PCB.
 
-### 5.2 Kiểm tra quang học tự động (AOI)
+### FR-02 — Xử lý dữ liệu
 
-| # | Yêu cầu | Chỉ tiêu |
-|---|---|---|
-| R1 | Phát hiện khuyết tật kích thước ≥ 0,1 mm | Độ phân giải không gian ≤ 0,025 mm/px (16,1 µm/px thực tế) |
-| R2 | Tỉ lệ bỏ sót thấp | Recall ≥ 0,95 |
-| R3 | Chạy trên phần cứng nhúng | Raspberry Pi 4, không GPU rời |
-| R4 | Thời gian kiểm tra | ≤ 2 phút cho bo 180 × 130 mm |
-| R5 | Phân loại khuyết tật | Xác định được loại, không chỉ báo có/không |
+Hệ thống phải chuyển đổi dữ liệu thiết kế thành dữ liệu NC hoặc dữ liệu phù hợp cho quá trình điều khiển gia công.
 
-**Pipeline AOI:**
+### FR-03 — Điều khiển gia công
 
-1. Chụp ghép 16 tile (dùng chuyển động máy làm cơ cấu quét)
-2. Ghép panorama + hiệu chỉnh phối cảnh
-3. Sinh vùng ứng viên từ tham chiếu Gerber (không dùng golden-template)
-4. Phân loại bằng YOLO (ONNX/NCNN) trên từng vùng ứng viên
-5. Hiển thị bản đồ lỗi với tọa độ và loại khuyết tật
+Hệ thống phải hỗ trợ 5 quy trình gia công theo thiết kế kỹ thuật của máy.
 
-**8 lớp khuyết tật đặc thù phay cách ly** (phải tự xây dựng tập dữ liệu — không dùng được DeepPCB/HRIPCB vốn dành cho bo ăn mòn).
+Mỗi quy trình phải:
 
-### 5.3 Hiệu chuẩn và hệ thống
+- Có điều kiện khởi động rõ ràng.
+- Có trạng thái thực hiện.
+- Có điều kiện hoàn thành.
+- Có cơ chế dừng và xử lý lỗi.
 
-| # | Chức năng | Chi tiết |
-|---|---|---|
-| S1 | Set home | `MC_Home` active homing; thứ tự Z → X → Y để dao không va phôi |
-| S2 | Leveling | Hạ Z bằng `MC_MoveVelocity`; chạm probe → ngắt phần cứng → `MC_Halt` → chốt Z |
-| S3 | Leveling map | Ma trận 66 điểm (6×11); ghép mặt phẳng 3 điểm; chạy trên Pi, không phải PLC |
-| S4 | Move thủ công | `MC_MoveJog` từng trục từ màn hình |
-| S5 | Disable/Enable stepper | `MC_Power` — ngắt để đẩy bàn tay |
-| S6 | Hiển thị realtime | PWM spindle, tọa độ x/y/z, chế độ vi bước |
+### FR-04 — Điều khiển chuyển động
 
-### 5.4 Phần mềm PC (7 tab)
+PLC phải điều khiển các cơ cấu chuyển động và các tín hiệu I/O liên quan đến quá trình gia công.
 
-| Tab | Chức năng |
-|---|---|
-| Menu | Hỏi đã dùng chưa → Yes vào thẳng, No sang video |
-| Video Tutorial | Hướng dẫn cho người mới |
-| Select File | Nhận file Gerber (lớp đồng, đường viền) + file Excellon (lỗ khoan) |
-| Select Area | Chọn vị trí gia công; hiển thị vi bước, đường kính dao, kích thước bo |
-| Waiting Convert | Tiến trình xuất file |
-| Save File NC | Preview (mô phỏng) hoặc Save file `.nc` |
-| End | Home hoặc Exit |
+Các chức năng chuyển động phải tuân thủ giới hạn phần cứng của S7-1200.
 
----
+### FR-05 — AOI
 
-## 6. Yêu cầu phi chức năng
+Hệ thống phải hỗ trợ kiểm tra quang học tự động sau hoặc trong quá trình gia công.
 
-| # | Yêu cầu | Chỉ tiêu |
-|---|---|---|
-| NF1 | An toàn | E-stop cắt cứng nguồn động lực 24 V, không đi qua PLC; tách nguồn PLC khỏi nguồn động lực |
-| NF2 | Độ tin cậy | Tuổi thọ thiết kế 5000 giờ |
-| NF3 | Nhiễu điện | Cáp xoắn đôi có lưới chắn cho PUL/DIR; opto cách ly sẵn trên driver |
-| NF4 | Nhiệt | Tản nhiệt + quạt bắt buộc cho Pi 4 (throttle ở 80 °C) trong tủ điện kín |
-| NF5 | Giao tiếp Pi–PLC | `python-snap7` qua Ethernet, ISO-TCP cổng 102; bắt buộc Pi 4 có Gigabit Ethernet onboard |
-| NF6 | Định dạng file | G-code chuẩn (`.nc`); mở được bằng bất kỳ phần mềm mô phỏng CNC nào |
+AOI phải đánh giá 5 chỉ tiêu chất lượng:
+
+- R1
+- R2
+- R3
+- R4
+- R5
+
+Định nghĩa, thuật toán và ngưỡng đánh giá chi tiết được xác định trong tài liệu AOI chuyên biệt.
+
+### FR-06 — Hiệu chuẩn
+
+Hệ thống phải hỗ trợ quy trình hiệu chuẩn để đảm bảo sự tương quan giữa:
+
+- Tọa độ phần mềm.
+- Hệ tọa độ máy.
+- Vị trí cơ cấu chuyển động.
+- Hệ thống camera.
+
+### FR-07 — Phần mềm PC
+
+Phần mềm vận hành phải cung cấp 7 nhóm chức năng hoặc tab chính theo thiết kế giao diện của hệ thống.
+
+Các tab phải hỗ trợ các hoạt động như:
+
+- Quản lý dữ liệu.
+- Thiết lập gia công.
+- Điều khiển máy.
+- Giám sát trạng thái.
+- Hiệu chuẩn.
+- AOI.
+- Cấu hình và chẩn đoán.
 
 ---
 
-## 7. Kiến trúc phần cứng
+## 5. Yêu cầu phi chức năng
 
-### 7.1 Bộ điều khiển
+### NFR-01 — An toàn
 
-| Thiết bị | Vai trò |
-|---|---|
-| Raspberry Pi 4 (4 GB) | Master: xử lý file, giao diện, AOI |
-| S7-1200 1214C DC/DC/DC | Slave: chuyển động, I/O, ATC, an toàn — **bắt buộc bản DC/DC/DC** |
-| SM 1223 DI8/DQ8 | Mở rộng ngõ ra (nhu cầu 12 DO > 10 DO onboard) |
-| TFT LCD 3.5" | Giao diện tại máy |
+Hệ thống phải hỗ trợ cơ chế dừng an toàn và ngăn thực hiện chuyển động không hợp lệ.
 
-### 7.2 Driver và công suất
+### NFR-02 — Độ tin cậy
 
-| Thiết bị | Thông số quan trọng |
-|---|---|
-| Leadshine DM542 (ưu tiên) hoặc TB6600 | 200 kHz max; opto cách ly sẵn |
-| Điện trở 2 kΩ / 0,25 W × 9 | **Bắt buộc** hạn dòng opto khi 24 V — bỏ qua là cháy opto ngay lần đầu |
-| BTS7960 + board opto | Điều khiển spindle DC RS775 |
-| Relay trung gian 24 V × 2 | Đảo chiều spindle (ATC) + ngắt leveling khi spindle quay |
+Các trạng thái hệ thống phải được kiểm soát bằng state machine và không được tạo transition không được định nghĩa.
 
-### 7.3 Camera và AOI
+### NFR-03 — Chống nhiễu
 
-| Thiết bị | Thông số quan trọng |
-|---|---|
-| IMX219 ngàm M12 | **Bắt buộc bản ngàm M12** — Pi Camera Module 2 không lấy nét được ở khoảng cách cần |
-| Ống kính M12 8 mm | FOV 52,9 mm ở 123 mm — **đo khoảng hở trước khi mua** |
-| Đèn vòng LED khuếch tán | **Bắt buộc** — đồng có phản xạ gương, chiếu thẳng tạo điểm chói bão hòa |
+Thiết kế điện và tín hiệu phải xem xét ảnh hưởng của nhiễu từ động cơ, nguồn và thiết bị công nghiệp.
 
-### 7.4 Nguồn
+### NFR-04 — Nhiệt độ
 
-| Thiết bị | Công dụng |
-|---|---|
-| 24 V / 15 A (360 W) | Mạch động lực: driver, spindle |
-| Siemens PM1207 24 V / 2,5 A | PLC và I/O — **tách khỏi nhiễu động lực** |
-| Bộ chuyển 24 V → 5 V / 5 A | Pi 4 và LCD |
+Các thành phần điện tử và nguồn phải hoạt động trong giới hạn nhiệt cho phép.
+
+### NFR-05 — Giao tiếp
+
+Raspberry Pi 4 và S7-1200 phải duy trì cơ chế giao tiếp ổn định giữa tầng xử lý cấp cao và tầng điều khiển thời gian thực.
 
 ---
 
-## 8. Kiến trúc phần mềm
+## 6. Kiến trúc hệ thống
 
-### 8.1 Phần mềm Pi 4
+### Raspberry Pi 4
 
-| Thành phần | Chức năng |
-|---|---|
-| App xuất file (PC) | Gerber + Excellon → `.nc` (dùng `pcb2gcode`, bỏ pipeline xử lý ảnh cũ) |
-| App giao diện (Pi 4) | UI, đọc USB, phân tích `.nc`, bù z, giao tiếp PLC qua `Service_S7Comm` |
-| Module AOI (Pi 4) | Chụp ghép, phân đoạn, sinh ứng viên, phân loại YOLO |
+Chịu trách nhiệm:
 
-### 8.2 Chương trình PLC (TIA Portal)
+- Xử lý dữ liệu Gerber/NC.
+- Giao tiếp cấp cao.
+- Điều phối quy trình.
+- Xử lý AOI.
+- Xử lý ảnh.
+- Tính toán nặng.
+- Giao diện và quản lý dữ liệu.
 
-| Tầng | Khối |
-|---|---|
-| Unit | `FB_Axis`×3, `FB_Spindle`, `FB_Probe`, `FB_ToolMagazine`, `FB_IO` |
-| Int | `FB_LinearMove`, `FB_ToolChange`, `FB_Leveling`, `FB_Homing` |
-| Main | `OB1` + `FB_Sequence` (máy trạng thái) + `FB_Comm` |
+### S7-1200 PLC
 
-**Định dạng G-code trung gian:**
+Chịu trách nhiệm:
 
+- Điều khiển thời gian thực.
+- I/O.
+- Điều khiển chuyển động.
+- PTO.
+- PWM.
+- Thực thi trình tự máy.
+- Giám sát tín hiệu phần cứng.
+
+### Nguyên tắc phân chia
+
+Không chuyển các tác vụ yêu cầu tính xác định thời gian thực sang Raspberry Pi nếu không có lý do kỹ thuật rõ ràng.
+
+Không chuyển các tác vụ xử lý ảnh hoặc tính toán nặng sang PLC.
+
+---
+
+## 7. Yêu cầu phần cứng bắt buộc
+
+Các thành phần và điều kiện sau phải được kiểm tra theo tài liệu thiết kế:
+
+- Điện trở 2 kΩ theo vị trí và chức năng đã xác định.
+- Phiên bản nguồn DC/DC/DC phải đúng với thiết kế được phê duyệt.
+- Camera phải sử dụng cấu hình ống kính M12 theo yêu cầu hệ thống.
+- Các tín hiệu chuyển động phải tuân thủ giới hạn PTO của PLC.
+- Timing PWM phải được kiểm chứng trong điều kiện vận hành thực tế 24 V.
+- Tín hiệu probe tốc độ cao phải sử dụng cơ chế hardware interrupt phù hợp.
+
+Không được thay đổi các yêu cầu này mà không thực hiện đánh giá kỹ thuật.
+
+---
+
+## 8. AOI và quản lý bộ nhớ
+
+Hệ thống AOI xử lý ảnh theo cơ chế chia thành 16 tile.
+
+Quy trình:
+
+```text
+Load Tile
+   ↓
+Process
+   ↓
+Extract Result
+   ↓
+Release Memory
+   ↓
+Next Tile
 ```
-G00 X.. Y.. Z..    ; di chuyển nhanh
-G01 X.. Y.. F..    ; cắt đường thẳng
-G02 / G03          ; cung tròn — phải tuyến tính hóa (PLC không nội suy được)
-M03 / M05          ; bật / tắt spindle
-M06 T..            ; thay dao
-```
 
-### 8.3 Giao tiếp Pi ↔ PLC
-
-`python-snap7`, ISO-TCP cổng 102. Hai cấu hình bắt buộc trong TIA Portal (thiếu → kết nối thành công nhưng đọc toàn số 0):
-1. CPU → Protection & Security → **bật "Permit access with PUT/GET"**
-2. DB trao đổi → Properties → **bỏ tick "Optimized block access"**
+Không được giữ toàn bộ 16 tile trong RAM nếu chưa có đánh giá xác nhận khả năng bộ nhớ.
 
 ---
 
-## 9. Điểm bắt buộc kiểm chứng trước vận hành
+## 9. Kiểm chứng bắt buộc trước vận hành
 
-| # | Hạng mục | Lý do |
+Trước khi hệ thống được đưa vào vận hành, phải hoàn thành 4 điểm kiểm chứng bắt buộc:
+
+1. Kiểm chứng giới hạn PTO và cấu hình tín hiệu chuyển động.
+2. Đo và xác nhận timing PWM trong điều kiện nguồn 24 V thực tế.
+3. Kiểm chứng tín hiệu probe bằng cơ chế ngắt phần cứng.
+4. Kiểm chứng cấu hình AOI, camera, quang học và khả năng quản lý bộ nhớ.
+
+Bất kỳ điểm nào chưa được xác nhận phải được đánh dấu rõ ràng và không được coi là đã hoàn thành.
+
+---
+
+## 10. State Machine
+
+Hệ thống hoạt động theo state machine gồm 8 trạng thái, từ:
+
+`IDLE → ... → INSPECTING`
+
+Mọi chức năng mới phải xác định:
+
+- State áp dụng.
+- Điều kiện bắt đầu.
+- Điều kiện kết thúc.
+- Transition hợp lệ.
+- Hành vi khi xảy ra lỗi.
+- Cơ chế reset hoặc recovery.
+
+Không được tạo transition ngầm hoặc thay đổi state machine mà không cập nhật tài liệu.
+
+---
+
+## 11. So sánh kiến trúc STM32 và PLC
+
+| Tiêu chí | Kiến trúc STM32 | Kiến trúc PLC mới |
 |---|---|---|
-| V1 | **PWM siết/nhả dao ở 24 V** | Thông số đồ án đo ở 12 V; điểm khởi đầu: duty ≈ 39% (PWM ~100/255) |
-| V2 | **Điện trở hạn dòng 2 kΩ trước opto driver** | Bỏ qua → cháy opto ngay lần cấp điện đầu |
-| V3 | **Thời gian suy luận YOLO trên Pi 4** | Chỉ là ước lượng; đo thực tế để xác nhận chu kỳ kiểm tra ≤ 2 phút |
-| V4 | **Đo khoảng hở dầm ngang → mặt bàn trước khi mua ống kính** | Tiêu cự 8 mm cần 123 mm; hẹp hơn → 6 mm (92 mm) hoặc 4 mm (62 mm) |
+| Điều khiển chính | Firmware MCU | S7-1200 PLC |
+| Phát triển | Embedded programming | PLC engineering |
+| Real-time | MCU firmware | PLC deterministic control |
+| I/O | MCU peripherals | Industrial I/O |
+| Motion | Firmware implementation | PTO / PLC control |
+| Mở rộng | Phụ thuộc hardware design | Dễ tích hợp công nghiệp |
+| Chẩn đoán | Debug firmware | PLC diagnostics |
+| Bảo trì | Embedded expertise | Industrial automation workflow |
 
 ---
 
-## 10. Thay đổi so với đồ án gốc (STM32)
+## 12. Tiêu chí hoàn thành
 
-| Hạng mục | Bản gốc (STM32) | Bản mới (S7-1200) |
-|---|---|---|
-| Bộ điều khiển | STM32F103C8T6 | S7-1200 1214C + Pi 4 |
-| Driver bước | DRV8825 (3,3–5 V logic) | DM542/TB6600 (opto cách ly, 24 V) |
-| Điện áp hệ thống | 12 VDC | 24 VDC |
-| Giao tiếp Pi–PLC | WiFi (Pi Zero 2W không có Ethernet) | Gigabit Ethernet, giao thức S7 |
-| Tủ điện | Bo mạch module tự thiết kế | DIN rail, terminal chuẩn công nghiệp |
-| Kiểm tra chất lượng | Thủ công bằng mắt + đồng hồ | AOI tự động với YOLO |
-| Định dạng file | Acode tự định nghĩa | G-code chuẩn (`.nc`) |
-| Pipeline sinh NC | Xử lý ảnh từ file PDF | Gerber + Excellon → vector, không sai số lượng tử |
-| Nội suy trục | Bresenham + BLU 16 hướng | Nội suy đường thẳng tỉ lệ vận tốc (PTO không nội suy arc) |
+Sản phẩm được xem là đạt yêu cầu khi:
+
+- [ ] Dữ liệu Gerber được xử lý thành dữ liệu phục vụ gia công.
+- [ ] 5 quy trình gia công hoạt động theo trình tự được xác định.
+- [ ] Raspberry Pi 4 và S7-1200 giao tiếp ổn định.
+- [ ] Các cơ cấu chuyển động hoạt động trong giới hạn phần cứng.
+- [ ] AOI kiểm tra đủ 5 chỉ tiêu R1–R5.
+- [ ] Quy trình hiệu chuẩn được thực hiện thành công.
+- [ ] Phần mềm PC cung cấp đầy đủ 7 nhóm chức năng.
+- [ ] Hoàn thành 4 điểm kiểm chứng bắt buộc.
+- [ ] State machine hoạt động với các transition được xác định.
+- [ ] Các yêu cầu an toàn, nhiễu, nhiệt và giao tiếp được đánh giá trước vận hành.
 
 ---
 
-## 11. Tài liệu kỹ thuật liên quan
+## Nguyên tắc
 
-| File | Nội dung |
-|---|---|
-| [`docs/thiet-bi-va-chuc-nang.md`](docs/thiet-bi-va-chuc-nang.md) | BOM đầy đủ và danh sách chức năng |
-| [`docs/chuc-nang-plc.md`](docs/chuc-nang-plc.md) | Đặc tả PLC: phân bổ I/O, khối hàm, Data Block, an toàn, đấu dây |
-| [`docs/gerber-sang-nc.md`](docs/gerber-sang-nc.md) | Sinh đường chạy dao: Gerber + Excellon → `.nc` |
-| [`docs/kiem-tra-quang-hoc.md`](docs/kiem-tra-quang-hoc.md) | Kiểm tra quang học tự động (AOI) |
-| [`docs/luu-do-giai-thuat.md`](docs/luu-do-giai-thuat.md) | Lưu đồ giải thuật toàn hệ thống |
-| [`docs/dinh-vi-va-toi-uu-phoi.md`](docs/dinh-vi-va-toi-uu-phoi.md) | Định vị phôi và tối ưu tận dụng phôi thừa |
-| [`docs/so-sanh-stm32-vs-s7.md`](docs/so-sanh-stm32-vs-s7.md) | Đối chiếu bản gốc ↔ bản mới |
+**PRD xác định hệ thống cần đạt được điều gì.**
+
+Các thông số kỹ thuật chi tiết, sơ đồ phần cứng, thuật toán AOI, state transition cụ thể và quy trình triển khai được lưu trong các tài liệu kỹ thuật chuyên biệt.
