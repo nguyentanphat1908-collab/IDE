@@ -25,6 +25,7 @@ Phần cơ khí giữ nguyên hoàn toàn từ đồ án gốc; lớp điều kh
 
 | File | Nội dung |
 |---|---|
+| [`docs/hardware.md`](docs/hardware.md) | **Hướng dẫn lắp đặt phần cứng**: vật tư cần mua, bố trí tủ điện, đấu nối từng cụm, checklist trước cấp điện, cấu hình TIA Portal, kiểm tra EMC |
 | [`docs/thiet-bi-va-chuc-nang.md`](docs/thiet-bi-va-chuc-nang.md) | Danh sách thiết bị (BOM) và danh sách chức năng đầy đủ |
 | [`docs/chuc-nang-plc.md`](docs/chuc-nang-plc.md) | Đặc tả PLC: phân bổ I/O, khối hàm, Data Block, an toàn, đấu dây |
 | [`docs/gerber-sang-nc.md`](docs/gerber-sang-nc.md) | Sinh đường chạy dao: Gerber + Excellon → `.nc` |
